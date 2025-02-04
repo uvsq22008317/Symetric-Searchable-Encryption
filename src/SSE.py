@@ -15,13 +15,12 @@ class Encryptor:
     def unpad(self,data):
         return data[:-data[-1]]
         # on recupere la valeur correspondant au nombre d'octets ajouté et on enleve ce nombre de charactere
-    
 
     def encrypt_document(self, content):
         cipher = AES.new(self.key, AES.MODE_CBC) # on chiffre le doc en AES mode CBC
         iv = cipher.iv
         encrypted_content = cipher.encrypt(self.pad(content.encode()))
-        return iv + encrypted_content
+        return bytes(iv) + encrypted_content
 
     def decrypt_document(self, encrypted_data):
         iv = encrypted_data[:16]
