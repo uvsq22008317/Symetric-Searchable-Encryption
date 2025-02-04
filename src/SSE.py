@@ -4,13 +4,13 @@ from Crypto.Random import get_random_bytes
 
 class Encryptor:
     def __init__(self, key):
-        self.key = hashlib.sha256(key.encode()).digest()
+        self.key = get_random_bytes(16)
 
     def pad(self, data):
         # on pad pour que les données aient une longueur de 16 octets (besoin AES)
         padding_length = 16-(len(data)%16)
-        return data + (chr(padding_length)*padding_length).encode()
-        # chaque charactere ajouté contient le nombre d'octets ajoutés
+        return data + b'8' + ('0'*(padding_length-1)).encode()
+        # b'<data>800000' pour que le total soit un multiple de 16 afin de pouvoir utiliser AES
     
     def unpad(self,data):
         return data[:-data[-1]]
