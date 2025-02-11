@@ -2,10 +2,7 @@ import os
 import json
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-
-CLIENTPATH = "./Client/"
-SERVEURPATH = "./Serveur/"
-extentions = (".txt")
+from Crypto.Util import Counter
 
 class Encryptor:
     """
@@ -21,27 +18,46 @@ class Encryptor:
     on enleve ce nombre de characteres à la fin du message
     """
     def unpad(self, data):
-        return data[:-data[-1]]
+        reversed_data = data[::-1]
+        padding_length = 0
+        while reversed_data[padding_length] != '8'.encode('utf-8')[0]:
+            padding_length += 1
+        return data[:-(padding_length + 1)]
 
-    # Pas fini
-    def encrypt_documents(self, key, client_path):
-        for document in os.listdir(client_path):
-            if document.endswith(extentions):
-                cipher = AES.new(key, AES.MODE_CBC) #Cypher Block Chaining
-                iv = cipher.iv
-                with open(client_path + document, 'r', encoding='utf-8') as file:
+    def encrypt_documents(self, key, source, destination):
+        for document in os.listdir(source):
+            if document.endswith(".txt"):
+                # 64 bits pour le nonce et 64 bits pour le ctr
+                nonce = get_random_bytes(8)
+                ctr = Counter.new(64, prefix=nonce) 
+                cipher = AES.new(key, AES.MODE_CTR, counter=ctr)
+                with open(source + document, 'r', encoding='utf-8') as file:
                     encrypted_content = cipher.encrypt(self.pad(file.read().encode()))
-                    encrypted_doc = client_path + os.path.splitext(document)[0] + '.enc'
-                    with open(encrypted_doc, 'wb') as f:                                           
-                        f.write(bytes(iv) + encrypted_content)                                       
+                    cipher2 = AES.new(key, AES.MODE_CBC)
+                    iv = cipher2.iv
+                    encrypted_name = cipher2.encrypt(self.pad(os.path.splitext(document)[0].encode()))
+                    encrypted_doc = destination + encrypted_name.hex() + '.enc'
+                    with open(encrypted_doc, 'wb') as f:    
+                        f.write(bytes(nonce) + bytes(iv) + encrypted_content)                                       
 
-    def decrypt_document(self, key, client_path, encrypted_data):
-        with open(client_path + encrypted_data, 'rb') as f:
+    def decrypt_document(self, key, source):
+        with open(source, 'rb') as f:
+            nonce = f.read(8)
             iv = f.read(16)
             encrypted_content = f.read()
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            decrypted_content = self.unpad(cipher.decrypt(encrypted_content))
-        return decrypted_content.decode()
+        ctr = Counter.new(64, prefix=nonce)
+        cipher = AES.new(key, AES.MODE_CTR, counter=ctr)
+        decrypted_content = self.unpad(cipher.decrypt(encrypted_content))
+        return decrypted_content.decode('utf-8')
+
+    def decrypt_documents(self, key, source):
+        res = ""
+        for document in os.listdir(source):
+            if document.endswith(".enc"):
+                decrypted_content = self.decrypt_document(key, source + document)
+                decrypted_name = os.path.splitext(document)[0] + '.txt'
+                res += decrypted_name + ": \"" + decrypted_content + "\"\n"
+        return res
 
     def encrypt_word(self, key, word):
         cipher = AES.new(self.key, AES.MODE_ECB)
@@ -49,15 +65,18 @@ class Encryptor:
         return cipher.encrypt(padded_word)
 
     """
-    On creer l'index en clair du dossier <client_path>
+    On creer l'index en clair du dossier <path> vers la <destination>
+    client : Le client qui crée son index en fonction de ses documents
     """
-    def create_index(self, key, client_path):
-        if not os.path.exists(client_path):
-            raise Exception("Le dossier {client_path} n'existe pas.")
+    def create_index(self, client):
+        path = client.get_path()
+        key = client.get_key()
+        if not os.path.exists(path):
+            raise Exception("ERR: Le dossier Client n'existe pas")
         index = {}
-        for document in os.listdir(client_path):
-            if document.endswith(extentions):
-                with open(client_path + document, 'r', encoding='utf-8') as file:  
+        for document in os.listdir(path):
+            if document.endswith(".txt"):
+                with open(path + document, 'r', encoding='utf-8') as file:  
                     for line in file:                                        
                         for word in line.split():                                          # ['The', 'question', 'isn', 't,', ...]
                             clean_word = word.strip(",.?!:;()[]{}\"'\n\t-")                # 'the', 'question', 'isn', 't'
@@ -66,7 +85,7 @@ class Encryptor:
                             if document not in index[clean_word]: 
                                 index[clean_word].append(document)                         # {'the': ['doc1.txt'], 'question': ['doc1.txt'], ...}
         # Sauvegarde du dictionnaire en JSON
-        with open(client_path + "/index.json", 'w', encoding='utf-8') as json_file:
+        with open(path + "index.json", 'w', encoding='utf-8') as json_file:
             json.dump(index, json_file, ensure_ascii=True)
 
     def encrypt_index(self, key, index_path):

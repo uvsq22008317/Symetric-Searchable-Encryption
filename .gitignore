@@ -88,3 +88,5 @@ celerybeat-schedule
 *.swp
 *.swo
 *.swn
+*.enc
+*.json
