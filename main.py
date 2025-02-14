@@ -1,26 +1,24 @@
-from src.SSE_client import Client
-from src.SSE import Encryptor
-from src.SSE_bdd import Database
+from src.services.client import Client
+from src.services.database import Database
+from src.utils.encryptor import encrypt_folder, decrypt_folder
 import os
+import src.config
 
 if __name__ == "__main__":
     c1, c2, c3 = Client("Alice"), Client("Bob"), Client("Charlie")
+    # TODO : Il faudrait qqchose qui genere des fichiers aleatoires afin de tester
 
-    #/!\ Ne pas oublier de supprimer les ".enc" dans les dossiers Client a chaque fois que l'on relance le programme
-    # Cela permet de relancer le programme directement sans avoir de fichier .enc
-    for document in os.listdir(c1.get_path()):
-        if document.endswith(".enc"):
-            os.remove(c1.get_path() + document)
+    source, key = ".\src\Clients\Alice", c1.get_key()
 
-    # print(c1)
-    e = Encryptor()
+    # On encrypte les fichiers dans le dossier d'Alice l'on laisse les fichiers encryptés dans le dossier d'Alice
+    encrypt_folder(source=source, key=key)
+    # TODO : Il manque l'envoie des fichiers du Serveur au Client
 
-    # Creation de l'index basé sur les documents d'Alice
-    e.create_index(c1)
-    # Avec la clé d'Alice, on chiffre ses documents que l'on place son propre dossier.
-    e.encrypt_documents(c1.get_key(), c1.get_path(), c1.get_path())
+    # TODO : L'index
 
-
-    contenu = e.decrypt_documents(c1.get_key(), c1.get_path())
+    # on decrypte les fichiers dans le dossiers d'Alice et on les effaces
+    contenu = decrypt_folder(key=key, source=source)
     print(contenu)
 
+    # On nettoie les fichiers .enc qui trainent de partout
+    src.config.remove_residual_files()
