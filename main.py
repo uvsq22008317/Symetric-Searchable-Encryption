@@ -1,6 +1,6 @@
 from src.services.client import Client
 from src.services.database import Database
-from src.utils.encryptor import encrypt_folder, decrypt_folder
+from src.utils.encryptor import encrypt_folder, decrypt_folder, create_index
 import os
 import src.config
 
@@ -15,10 +15,11 @@ if __name__ == "__main__":
     # TODO : Il manque l'envoie des fichiers du Serveur au Client
 
     # TODO : L'index
+    create_index(c1)
 
     # on decrypte les fichiers dans le dossiers d'Alice et on les effaces
-    contenu = decrypt_folder(key=key, source=source)
-    print(contenu)
+    #contenu = decrypt_folder(key=key, source=source)
+    #print(contenu)
 
     # On nettoie les fichiers .enc qui trainent de partout
     src.config.remove_residual_files()

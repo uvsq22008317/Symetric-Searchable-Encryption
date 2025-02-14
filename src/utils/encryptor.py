@@ -98,23 +98,22 @@ def decrypt_folder(key, source):
         config.log_message("ERROR", f"Erreur lors de la décryption du dossier {source} : {e}")
         return
 
-def create_index(clientname):
+def create_index(client):
     try:
-        client_path = os.path.join(config.CLIENTS_PATH, clientname)
         path, key = client.get_path(), client.get_key()
     except Exception as e:
-        log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
+        config.log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
         return
             
     # On crée l'index
-    log_message("INFO", f"Création de l'index pour {client.get_name()}")
+    config.log_message("INFO", f"Création de l'index pour {client.get_name()}")
     index = {}
     for document in os.listdir(path):
         doc_path = os.path.join(path, document)
         
         # Vérification de l'existance du fichier
         if document.endswith(config.EXTENTIONS) and os.path.isfile(doc_path):
-            log_message("DEBUG", f"Lecture du fichier {document}")
+            config.log_message("DEBUG", f"Lecture du fichier {document}")
 
             # Parcours du fichier en considerant chaque mot
             with open(doc_path, "r", encoding="utf-8") as file:  
@@ -127,9 +126,10 @@ def create_index(clientname):
                             index[clean_word].append(document)
 
             index_path = os.path.join(path, "index.json")
+            print(index_path)
             with open(index_path, "w", encoding="utf-8") as json_file:
                 json.dump(index, json_file, indent=4, ensure_ascii=True)
-    log_message("INFO", f"Index de {client.get_name()} a créé avec succès.")
+    config.log_message("INFO", f"Index de {client.get_name()} a créé avec succès.")
 
 def encrypt_index(key, index_path):
     with open(index_path, 'r', encoding='utf-8') as index_file:
