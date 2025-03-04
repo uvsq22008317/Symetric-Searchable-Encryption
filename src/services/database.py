@@ -33,12 +33,8 @@ class Database:
             file.write(encrypted_data)
 
     def recover_encrypted_document(self, doc_id):
-        # Recover encrypted doc from user's folder
-        file_path = os.path.join(self.server_path, f'{doc_id}.enc')
-        if os.path.exists(file_path):
-            with open(file_path, 'rb') as file:
-                return file.read()
-        return None
+        raise NotImplementedError("Not yet")
+
 
     def search(self, word):
         # Find doc containing the word

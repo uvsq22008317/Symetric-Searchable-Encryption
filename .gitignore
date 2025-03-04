@@ -90,3 +90,5 @@ celerybeat-schedule
 *.swn
 *.enc
 *.json
+
+Findex.md

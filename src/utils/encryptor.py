@@ -92,52 +92,8 @@ def decrypt_folder(key, source):
                 cipher = AES.new(key, AES.MODE_CBC, iv=iv)
                 encrypted_name = bytes.fromhex(os.path.splitext(document)[0])
                 decrypted_name = unpad_bit(cipher.decrypt(encrypted_name))
-                res += "\n" + decrypted_name + ": \"" + decrypted_content.decode("utf-8") + "\""
+                res += "\n" + decrypted_name + ": \"" + unpad_bit(decrypted_content) + "\""
         return res + "\n**Decryption**\n"
     except Exception as e:
         config.log_message("ERROR", f"Erreur lors de la décryption du dossier {source} : {e}")
         return
-
-def create_index(client):
-    try:
-        path, key = client.get_path(), client.get_key()
-    except Exception as e:
-        config.log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
-        return
-            
-    # On crée l'index
-    config.log_message("INFO", f"Création de l'index pour {client.get_name()}")
-    index = {}
-    for document in os.listdir(path):
-        doc_path = os.path.join(path, document)
-        
-        # Vérification de l'existance du fichier
-        if document.endswith(config.EXTENTIONS) and os.path.isfile(doc_path):
-            config.log_message("DEBUG", f"Lecture du fichier {document}")
-
-            # Parcours du fichier en considerant chaque mot
-            with open(doc_path, "r", encoding="utf-8") as file:  
-                for line in file:                                        
-                    for word in line.split():                                      
-                        clean_word = word.strip(",.?!:;()[]{}\"'\n\t-")
-                        if clean_word not in index:
-                            index[clean_word] = []
-                        if document not in index[clean_word]: 
-                            index[clean_word].append(document)
-
-            index_path = os.path.join(path, "index.json")
-            print(index_path)
-            with open(index_path, "w", encoding="utf-8") as json_file:
-                json.dump(index, json_file, indent=4, ensure_ascii=True)
-    config.log_message("INFO", f"Index de {client.get_name()} a créé avec succès.")
-
-def encrypt_index(key, index_path):
-    with open(index_path, 'r', encoding='utf-8') as index_file:
-        index = json.load(index_file)
-    cipher = AES.new(key, AES.MODE_ECB)
-    encrypted_index = {}
-    for word, docs in index.items():
-        encrypted_word = self.encrypt_word(key, word)
-        encrypted_docs = [self.encrypt_word(key, doc) for doc in docs]
-        encrypted_index[encrypted_word] = encrypted_docs
-    return encrypted_index
