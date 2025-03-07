@@ -13,6 +13,20 @@ SERVICES_PATH = os.path.join(BASE_PATH, "services")
 EXTENTIONS = (".txt", ".md")
 ENCODED_EXTENTION = ".enc"
 
+# Noms généré lors de la génération de fichiers
+FILENAMES_LIST = [
+    "file", "document", "log", 
+    "report", "resume", "notes", 
+    "journal", "data", "backup"
+    ]
+
+FRUITS_LIST = [
+    "Banane", "Pomme", "Fraise", "Mangue", "Orange",
+    "Raisin", "Pastèque", "Ananas", "Cerise", "Pêche",
+    "Poire", "Framboise", "Melon", "Kiwi", "Grenade",
+    "Papaye", "Fruit du dragon", "Litchi", "Noix de coco", "Myrtille",
+    "Abricot", "Figue", "Kaki", "Goyave", "Citron"
+]
 
 """
     Initialise les dossiers Clients et Serveur en les vidant de tout contenu
@@ -49,10 +63,10 @@ def setup():
             if os.path.isdir(file_path):
                 os.system('rmdir /S /Q "{}"'.format(file_path))
 
-def remove_residual_files(path=BASE_PATH):
+def remove_residual_files(path):
     for file in os.listdir(path):
         file_path = os.path.join(path, file)
-        if os.path.isfile(file_path) and file.endswith(ENCODED_EXTENTION):
+        if os.path.isfile(file_path):
             os.remove(file_path)
         if os.path.isdir(file_path):
             remove_residual_files(file_path)

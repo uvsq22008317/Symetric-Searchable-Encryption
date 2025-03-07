@@ -1,7 +1,5 @@
 import os
 import sys
-import random
-import string
 
 # Ajouter automatiquement le dossier parent au PYTHONPATH
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -9,10 +7,6 @@ import config
 
 from utils.logger import log_message
 from Cryptodome.Random import get_random_bytes
-
-
-# TESTING
-import json
 
 class Client:
     def __init__(self, name):

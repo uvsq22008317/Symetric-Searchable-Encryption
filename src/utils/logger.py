@@ -2,7 +2,7 @@ import logging
 import os
 
 # Définition du niveau de logs via une variable d’environnement (par defaut INFO)
-LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG") # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO") # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 # Configuration du logger
 logging.basicConfig(
