@@ -6,7 +6,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import config
 
 from utils.logger import log_message
-from Cryptodome.Random import get_random_bytes
+from Crypto.Random import get_random_bytes
+import json
 
 class Client:
     def __init__(self, name):
@@ -38,8 +39,8 @@ class Client:
         index_client_path = os.path.join(config.CLIENTS_PATH, "index.json")
         index_server_path = os.path.join(config.SERVER_PATH, "index.json")
 
-        # Le fichier index.json du client existe-t-il ?
-        if not os.path.exists(index_path):
+        if not os.path.exists(index_client_path):
+            log_message("ERROR", f"Le fichier {index_client_path} n'existe pas.")
             log_message("ERROR", f"Le fichier {index_path} n'existe pas.")
             return
         
