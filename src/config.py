@@ -70,3 +70,6 @@ def remove_residual_files(path):
             os.remove(file_path)
         if os.path.isdir(file_path):
             remove_residual_files(file_path)
+    for dossier in os.listdir(path):
+        file_path = os.path.join(path, dossier)
+        os.system('rmdir /S /Q "{}"'.format(file_path))
