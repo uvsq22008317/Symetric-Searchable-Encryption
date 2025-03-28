@@ -13,9 +13,9 @@ if __name__ == "__main__":
     if not os.path.exists(PATHS["client"]):
         os.makedirs(PATHS["client"])
     if not os.path.exists(PATHS["server"]):
-        os.makedirs(PATHS["client"])
+        os.makedirs(PATHS["server"])
     if not os.path.exists(PATHS["backup"]):
-        os.makedirs(PATHS["client"])
+        os.makedirs(PATHS["backup"])
 
     # Suppression des fichiers résiduels pour avoir un environnement propre
     remove_residual_files(PATHS["client"])
