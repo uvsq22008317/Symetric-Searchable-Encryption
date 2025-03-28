@@ -10,19 +10,20 @@ import hmac
 import hashlib
 
 if __name__ == "__main__":
-    # Suppression des fichiers résiduels pour avoir un environnement propre
-    remove_residual_files(PATHS["client"])
-    remove_residual_files(PATHS["server"])
-    remove_residual_files(PATHS["backup"])
-
-    # Création un fichiers texte temporaires
     if not os.path.exists(PATHS["client"]):
         os.makedirs(PATHS["client"])
     if not os.path.exists(PATHS["server"]):
         os.makedirs(PATHS["client"])
     if not os.path.exists(PATHS["backup"]):
         os.makedirs(PATHS["client"])
-    generate_random_file(PATHS["client"], num_files=400)
+
+    # Suppression des fichiers résiduels pour avoir un environnement propre
+    remove_residual_files(PATHS["client"])
+    remove_residual_files(PATHS["server"])
+    remove_residual_files(PATHS["backup"])
+
+    # Création un fichiers texte temporaires
+    generate_random_file(PATHS["client"], num_files=10)
 
     # On crée son index en clair
     create_index(PATHS["client"])
