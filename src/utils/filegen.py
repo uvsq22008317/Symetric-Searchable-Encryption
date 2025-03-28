@@ -1,8 +1,7 @@
 import os
 import random
 import string
-import config
-from utils.logger import log_message
+from config import log_message, FILENAMES_LIST, EXTENTIONS, FRUITS_LIST
 
 def generate_random_file(source, num_files=5):
     try:
@@ -14,10 +13,10 @@ def generate_random_file(source, num_files=5):
         log_message("ERREUR", "Le nombre de fichiers doit être supérieur à zéro")
         return
     for i in range(num_files):
-        name = random.choice(config.FILENAMES_LIST) + f"_{i+1}" + random.choice(config.EXTENTIONS)
+        name = random.choice(FILENAMES_LIST) + f"_{i+1}" + random.choice(EXTENTIONS)
         file = os.path.join(source, name)
         with open(file, "w", encoding="utf-8") as f:
             text = ' '.join(
-                random.choices(config.FRUITS_LIST, k=random.randint(7, 15)))
+                random.choices(FRUITS_LIST, k=random.randint(7, 15)))
             f.write(text)
     log_message("INFO", f"{num_files} fichiers générés dans {source}")

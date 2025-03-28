@@ -1,67 +1,93 @@
 import os
 import json
+import re
+from config import EXTENTIONS, PATHS, log_message
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util import Counter
-from src.utils.encryptor import pad_bit
+from Crypto.Util.Padding import pad, unpad
+import hmac
+import hashlib
 
+def formate_line(text):
+    # On sépare sur toute ponctuation ou espace
+    raw_words = re.split(r"[^\w\-]+", text)
 
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-import config
+    # On filtre les chaînes vides
+    return [word for word in raw_words if word]
 
 def create_index(source):
-    # TODO : Erreur si la source n'est pas un dossier valide
-    # On crée l'index
-    config.log_message("INFO", f"Création de l'index en cours.")
+    if not os.path.isdir(source):
+        log_message("ERROR", f"Le chemin {source} n'est pas un dossier.")
+        return
+
+    log_message("INFO", f"Création de l'index...")
     index = {}
+
     for document in os.listdir(source):
         doc_path = os.path.join(source, document)
-        
-        # Vérification de l'existance du fichier
-        if document.endswith(config.EXTENTIONS) and os.path.isfile(doc_path):
-            config.log_message("DEBUG", f"Lecture du fichier {document}")
+        if document.endswith(EXTENTIONS) and os.path.isfile(doc_path):
+            log_message("DEBUG", f"Lecture du fichier {document}")
+            with open(doc_path, "r", encoding="utf-8") as file:
+                for line in file:
+                    for word in formate_line(line):
+                        if word not in index:
+                            index[word] = []
+                        if document not in index[word]:
+                            index[word].append(document)
 
-            # Parcours du fichier en considerant chaque mot
-            with open(doc_path, "r", encoding="utf-8") as file:  
-                for line in file:                                        
-                    for word in line.split():                                      
-                        clean_word = word.strip(",.?!:;()[]{}\"'\n\t-")
-                        if clean_word not in index:
-                            index[clean_word] = []
-                        if document not in index[clean_word]: 
-                            index[clean_word].append(document)
-
-        index_path = os.path.join(source, "index.json")
-        try:
-            with open(index_path, "w", encoding="utf-8") as json_file:
-                json.dump(index, json_file, indent=4, ensure_ascii=True)
-        except Exception as e:
-            config.log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
-            return   
-    config.log_message("INFO", f"Index a créé avec succès.")
-
-def encrypt_index(source, key):
-    config.log_message("DEBUG", f"Encryption de l'Index de en cours.")    
+    # Écriture de l'index
+    index_path = os.path.join(source, "index.json")
     try:
-        with open(os.path.join(source, "index.json"), 'r', encoding='utf-8') as index_file:
+        with open(index_path, "w", encoding="utf-8") as json_file:
+            json.dump(index, json_file, indent=4, ensure_ascii=False)
+        log_message("DEBUG", f"Index créé avec succès dans : {index_path}")
+    except Exception as e:
+        log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
+
+def encrypt_index(source, key, doc_name_map):
+    log_message("INFO", "Chiffrement de l'index en cours...")
+
+    index_path = os.path.join(source, "index.json")
+    if not os.path.isfile(index_path):
+        log_message("ERROR", f"L'index n'existe pas à cet emplacement : {index_path}")
+        return
+
+    # On charger l’index en clair
+    try:
+        with open(index_path, 'r', encoding='utf-8') as index_file:
             index = json.load(index_file)
     except Exception as e:
-        config.log_message("ERROR", f"Erreur lors de l'ouverture de l'index lors de l'encryption : {e}")
+        log_message("ERROR", f"Erreur à l'ouverture de l'index : {e}")
         return
-    cipher = AES.new(key, AES.MODE_ECB)
+
+    # On remplacer les noms des documents de l'index par les noms chiffrées en CBC
+    new_index = {}
+    for word, doc_list in index.items():
+        new_doc_list = []
+        for doc in doc_list:
+            if doc in doc_name_map:
+                new_doc_list.append(doc_name_map[doc])
+            else:
+                log_message("WARNING", f"{doc} non trouvé dans la table de correspondance")
+        new_index[word] = new_doc_list
+
+    # On chiffre uniquement les mots et pas les noms de fichiers déjà chiffrées
     encrypted_index = {}
-    config.log_message("WARNING", f"Mode ECB lors de l'encryption de l'index !")
-    for word, docs in index.items():
-        # Encryption en CBC
-        encrypted_word = cipher.encrypt(pad_bit(word.encode("utf-8"))).hex()
-        encrypted_docs = [cipher.encrypt(pad_bit(doc.encode("utf-8"))).hex() for doc in docs]
-        encrypted_index[encrypted_word] = encrypted_docs
-        try:
-            encrypted_index_path = os.path.join(source, 'encrypted_index.json')
-            with open(encrypted_index_path, "w", encoding="utf-8") as encrypted_json_file:
-                json.dump(encrypted_index, encrypted_json_file, indent=4, ensure_ascii=True)
-        except Exception as e:
-            config.log_message("ERROR", f"Erreur lors de la création de l'index encrypté : {e}")
-            return   
-    config.log_message("INFO", f"Index a créé encrypté avec succès.")
+    for word, enc_doc_list in new_index.items():
+        iv = get_random_bytes(16)
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        encrypted_word = cipher.encrypt(pad(word.encode("utf-8"), 16, "iso7816")).hex()
+
+        # C'est ici que tout se joue
+        token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), key, 5).hex()
+        encrypted_index[token] = enc_doc_list
+
+    # Sauvegarde de l’index chiffré
+    try:
+        encrypted_index_path = os.path.join(source, "encrypted_index.json")
+        with open(encrypted_index_path, "w", encoding="utf-8") as f:
+            json.dump(encrypted_index, f, indent=4, ensure_ascii=False)
+        log_message("DEBUG", f"Index encrypté avec succès dans : {encrypted_index_path}")
+    except Exception as e:
+        log_message("ERROR", f"Erreur lors de la sauvegarde de l'index encrypté : {e}")

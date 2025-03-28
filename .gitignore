@@ -91,4 +91,6 @@ celerybeat-schedule
 *.enc
 *.json
 
-Findex.md
+Client/
+Serveur/
+Backup/
