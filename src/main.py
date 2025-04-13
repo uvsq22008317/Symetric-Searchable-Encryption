@@ -1,7 +1,7 @@
 import os
 from Crypto.Random import get_random_bytes
-from utils.encryptor import encrypt_folder, decrypt_file, search_word
-from config import PATHS, ENCODED_EXTENTION, log_message, remove_residual_files
+from utils.encryptor import encrypt_folder, decrypt_file, search_word, update_document
+from config import EXTENTIONS, PATHS, ENCODED_EXTENTION, log_message, remove_residual_files
 from utils.filegen import generate_random_file
 from utils.index import create_index, encrypt_index
 import sys
@@ -96,6 +96,36 @@ if __name__ == "__main__":
         if word.lower() in ["exit", "quit", "break", "q", "stop", "quitter"]:
             log_message("INFO", "Le Client a quitté la connexion")
             break
+
+        elif word.lower() == "update":
+            log_message("DEBUG", f"Chemin du backup: {PATHS['backup']}")
+            log_message("DEBUG", f"Contenu du backup: {os.listdir(PATHS['backup'])}")
+
+            log_message("INFO", "Mise à jour d'un document")
+            backup_files = [f for f in os.listdir(PATHS["backup"]) if f.endswith(EXTENTIONS)]
+            if not backup_files:
+                log_message("INFO", "Aucun document disponible pour mise à jour")
+                continue
+            log_message("INFO", "Sélectionnez le document à mettre à jour :")
+            for i, doc in enumerate(backup_files):
+                log_message("INFO", f"{i + 1}: {doc}")
+            try :
+                choice = int(input("> ")) - 1
+                if choice < 0 or choice >= len(backup_files):
+                    log_message("ERROR", "Choix invalide")
+                    continue
+                doc_name = backup_files[choice]
+                log_message("INFO", f"Contenu actuel du document {doc_name}:")
+                with open(os.path.join(PATHS["backup"], doc_name), 'r', encoding='utf-8') as f:
+                    print(f.read())
+                new_content = input("Nouveau contenu: ").strip()
+                if update_document(key, PATHS["client"], doc_name, new_content):
+                    log_message("INFO", "Document mis à jour avec succès")
+                else:
+                    log_message("ERROR", "Échec de la mise à jour")
+            except (ValueError, IndexError):
+                log_message("ERROR", "Choix invalide")
+            continue
 
         if not word:
             continue

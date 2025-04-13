@@ -45,7 +45,7 @@ def create_index(source):
     except Exception as e:
         log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
 
-def encrypt_index(source, key, doc_name_map):
+def encrypt_index(source, key, doc_name_map, regenerate=False):
     log_message("INFO", "Chiffrement de l'index en cours...")
 
     index_path = os.path.join(source, "index.json")
@@ -81,7 +81,12 @@ def encrypt_index(source, key, doc_name_map):
 
         # C'est ici que tout se joue
         token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), key, 5).hex()
-        encrypted_index[token] = enc_doc_list
+        if regenerate:
+            # Si on régénère complètement on peut recalculer tous les tokens
+            encrypted_index[token] = enc_doc_list
+        else:
+            # Sinon on conserve la structure existante
+            encrypted_index[token] = enc_doc_list
 
     # Sauvegarde de l’index chiffré
     try:
@@ -89,5 +94,7 @@ def encrypt_index(source, key, doc_name_map):
         with open(encrypted_index_path, "w", encoding="utf-8") as f:
             json.dump(encrypted_index, f, indent=4, ensure_ascii=False)
         log_message("DEBUG", f"Index encrypté avec succès dans : {encrypted_index_path}")
+        return encrypted_index
     except Exception as e:
         log_message("ERROR", f"Erreur lors de la sauvegarde de l'index encrypté : {e}")
+        return None
