@@ -111,53 +111,63 @@ def update_document(key, source, original_filename, new_content):
     log_message("INFO", f"Mise à jour du document {original_filename}")
 
     # verification que le fichier existe
-    backup_path = os.path.join(PATHS["backup"], original_filename)
-    if not os.path.exists(backup_path):
-        log_message("ERROR", f"Document {original_filename} non trouvé dans le backup")
+    index_path = os.path.join(source, "index.json")
+    if not os.path.exists(index_path):
+        log_message("ERROR", f"Index non trouvé dans le dossier client")
         return False
     
-    # modification du contenu
-    with open(backup_path, "w", encoding="utf-8") as f:
-        f.write(new_content)
+    try :
+        # recuperation de l'index
+        with open(index_path, "r", encoding="utf-8") as f:
+            index = json.load(f)
 
-    # on recree l'index complet
-    index_path = os.path.join(PATHS["client"], "index.json")
-    encrypted_index_path = os.path.join(PATHS["server"], "encrypted_index.json")
-    if os.path.exists(index_path):
-        os.remove(index_path)
-    if os.path.exists(encrypted_index_path):
-        os.remove(encrypted_index_path)
+        # verification que le fichier existe dans l'index
+        document_exists = False
+        for word,doc in index.items():  
+            if original_filename in doc:
+                document_exists = True
+                break
+        if not document_exists:
+            log_message("ERROR", f"Document {original_filename} non trouvé dans l'index")
+            return False
+        
+        # creation du fichier dans le dossier client
+        doc_path = os.path.join(source, original_filename)
+        with open(doc_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
 
-    # Copie de tous les fichiers du backup vers le client
-    for file in os.listdir(PATHS["backup"]):
-        if file.endswith(EXTENTIONS):
-            src = os.path.join(PATHS["backup"], file)
-            dst = os.path.join(PATHS["client"], file)
-            shutil.copy2(src, dst)
+        # on recree l'index complet
+        encrypted_index_path = os.path.join(PATHS["server"], "encrypted_index.json")
+        if os.path.exists(index_path):
+            os.remove(index_path)
+        if os.path.exists(encrypted_index_path):
+            os.remove(encrypted_index_path)
+
+        create_index(source)
+        doc_name_map = encrypt_folder(key, source)
+        encrypt_index(source, key, doc_name_map, regenerate=True)
+
+        # deplace fichiers chiffrés vers serveur
+        for enc_file in os.listdir(source):
+            if enc_file.endswith(ENCODED_EXTENTION):
+                src_path = os.path.join(source, enc_file)
+                dest_path = os.path.join(PATHS["server"], enc_file)
+                if os.path.exists(dest_path):
+                    os.remove(dest_path) 
+                shutil.move(src_path, dest_path)
+
+        # deplace index vers serveur
+        src_index = os.path.join(source, "encrypted_index.json")
+        dest_index = os.path.join(PATHS["server"], "encrypted_index.json")
+        shutil.move(src_index, dest_index)
+
+        for file in os.listdir(source):
+            if file.endswith(EXTENTIONS):
+                os.remove(os.path.join(source, file))
+
+        log_message("INFO", f"Document {original_filename} mis à jour avec succès")
+        return True
     
-    create_index(PATHS["client"])
-
-    doc_name_map = encrypt_folder(key, PATHS["client"])
-
-    encrypt_index(PATHS["client"], key, doc_name_map)
-
-    # deplace fichiers chiffrés vers serveur
-    for enc_file in os.listdir(PATHS["client"]):
-        if enc_file.endswith(ENCODED_EXTENTION):
-            src_path = os.path.join(PATHS["client"], enc_file)
-            dest_path = os.path.join(PATHS["server"], enc_file)
-            if os.path.exists(dest_path):
-                os.remove(dest_path)  # Supprimer l'ancienne version
-            shutil.move(src_path, dest_path)
-
-    # deplace index vers serveur
-    src_index = os.path.join(PATHS["client"], "encrypted_index.json")
-    dest_index = os.path.join(PATHS["server"], "encrypted_index.json")
-    shutil.move(src_index, dest_index)
-
-    for file in os.listdir(PATHS["client"]):
-        if file.endswith(EXTENTIONS):
-            os.remove(os.path.join(PATHS["client"], file))
-
-    log_message("INFO", f"Document {original_filename} mis à jour avec succès")
-    return True
+    except Exception as e:
+        log_message("ERROR", f"Erreur durant la mise à jour du document : {e}")
+        return False

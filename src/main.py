@@ -1,3 +1,4 @@
+import json
 import os
 from Crypto.Random import get_random_bytes
 from utils.encryptor import encrypt_folder, decrypt_file, search_word, update_document
@@ -98,31 +99,42 @@ if __name__ == "__main__":
             break
 
         elif word.lower() == "update":
-            log_message("DEBUG", f"Chemin du backup: {PATHS['backup']}")
-            log_message("DEBUG", f"Contenu du backup: {os.listdir(PATHS['backup'])}")
-
             log_message("INFO", "Mise à jour d'un document")
-            backup_files = [f for f in os.listdir(PATHS["backup"]) if f.endswith(EXTENTIONS)]
-            if not backup_files:
+            index_path = os.path.join(PATHS["client"], "index.json")
+            if not os.path.exists(index_path):
+                log_message("ERROR", "Index non trouvé dans le dossier client")
+                continue
+                
+            with open(index_path, 'r', encoding='utf-8') as f:
+                index = json.load(f)
+            
+            # recuperation de tous les documents de l'index
+            all_docs = set()
+            for docs in index.values():
+                all_docs.update(docs)
+            
+            if not all_docs:
                 log_message("INFO", "Aucun document disponible pour mise à jour")
                 continue
+            
             log_message("INFO", "Sélectionnez le document à mettre à jour :")
-            for i, doc in enumerate(backup_files):
+            for i, doc in enumerate(sorted(all_docs)):
                 log_message("INFO", f"{i + 1}: {doc}")
+
             try :
                 choice = int(input("> ")) - 1
-                if choice < 0 or choice >= len(backup_files):
+                if choice < 0 or choice >= len(all_docs):
                     log_message("ERROR", "Choix invalide")
                     continue
-                doc_name = backup_files[choice]
-                log_message("INFO", f"Contenu actuel du document {doc_name}:")
-                with open(os.path.join(PATHS["backup"], doc_name), 'r', encoding='utf-8') as f:
-                    print(f.read())
-                new_content = input("Nouveau contenu: ").strip()
+                doc_name = sorted(all_docs)[choice]
+                log_message("INFO", f"Entrez le nouveau contenu pour {doc_name}:")
+                new_content = input("> ").strip()
+
                 if update_document(key, PATHS["client"], doc_name, new_content):
                     log_message("INFO", "Document mis à jour avec succès")
                 else:
                     log_message("ERROR", "Échec de la mise à jour")
+                    
             except (ValueError, IndexError):
                 log_message("ERROR", "Choix invalide")
             continue
