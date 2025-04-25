@@ -23,10 +23,9 @@ class Server :
         else:
             self.encrypted_index = {}
 
-    def search_word(self, word):
+    def search_word(self, token):
+        # Recherche par token pré-calculé par le client
         try:
-            # Ligne suivante on récupère la clé du client : problème ?
-            token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), self.client.key, 5).hex()
             return self.encrypted_index.get(token, [])
         except Exception as e:
             log_message("ERROR", f"Erreur pendant la recherche du mot : {e}")

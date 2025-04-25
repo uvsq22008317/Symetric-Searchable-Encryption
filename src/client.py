@@ -293,3 +293,11 @@ class Client:
         except Exception as e:
             log_message("ERROR", f"Erreur lors de la sauvegarde de l'index encrypté : {e}")
             return None
+        
+    def calculate_search_token(self, word):
+        # Calcule le token de recherche sans exposer la clé au serveur
+        try:
+            return hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), self.key, 5).hex()
+        except Exception as e:
+            log_message("ERROR", f"Erreur dans le calcul du token : {e}")
+            return None
