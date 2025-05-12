@@ -4,7 +4,7 @@ import shutil
 from client import Client
 from server import Server
 from file_generator import FileGenerator
-from config import PATHS, log_message, remove_residual_files
+from config import EXTENTIONS, PATHS, log_message, remove_residual_files
 import sys
 
 def main():
@@ -57,6 +57,14 @@ def main():
         elif word.lower() == "update":
             # Gestion de la mise à jour de document
             handle_update_document(client)
+            continue
+
+        elif word.lower() in ["add", "ajouter"]:
+            handle_add_files(client)
+            continue
+
+        elif word.lower() in ["remove", "delete", "supprimer"]:
+            handle_remove_file(client)
             continue
 
         if not word:
@@ -140,6 +148,79 @@ def handle_search(word, client, server):
 
         # Nettoyage des fichiers temporaires
         server.cleanup_temp_files(temp_files)
+
+def handle_add_files(client):
+    log_message("INFO", "Fichiers disponibles dans le backup:")
+    
+    backup_files = []
+
+    for element in os.listdir(PATHS["backup"]):
+        full_path = os.path.join(PATHS["backup"], element)
+        
+        if element.endswith(EXTENTIONS) and os.path.isfile(full_path):
+            backup_files.append(element)
+
+    if not backup_files:
+        log_message("INFO", "Aucun fichier disponible dans le backup")
+        return
+    
+    for i, f in enumerate(backup_files, 1):
+        log_message("INFO", f"{i}. {f}")
+    
+    log_message("INFO", "Entrez le numéro du fichier à ajouter:")
+    
+    while True:
+        choice = input("> ").strip()
+        if choice.lower() in ['q', 'quit', 'exit']:
+            return
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(backup_files):
+                filename = backup_files[idx]
+                ok = client.add_file_from_backup(filename)
+                if ok:
+                    log_message("INFO", "Ajout réussi!")
+                else:
+                    log_message("ERROR", "Échec de l'ajout")
+                break
+            else:
+                log_message("WARNING", "Numéro invalide")
+        except ValueError:
+            log_message("WARNING", "Veuillez entrer un numéro valide")
+
+
+def handle_remove_file(client):
+    backup_files = []
+
+    for element in os.listdir(PATHS["backup"]):
+        full_path = os.path.join(PATHS["backup"], element)
+        
+        if element.endswith(EXTENTIONS) and os.path.isfile(full_path):
+            backup_files.append(element)
+
+    if not backup_files:
+        log_message("INFO", "Aucun fichier disponible dans le backup")
+        return
+    
+    for i, f in enumerate(backup_files, 1):
+        log_message("INFO", f"{i}. {f}")
+    
+    log_message("INFO", "Entrez le numéro du document à supprimer:")
+    
+    while True:
+        choice = input("> ").strip()
+        if choice.lower() in ['q', 'quit', 'exit']:
+            return
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(client.doc_name_map):
+                filename = list(client.doc_name_map.keys())[idx]
+                client.remove_document(filename)
+            else:
+                log_message("WARNING", "Numéro invalide")
+        except ValueError:
+            log_message("WARNING", "Veuillez entrer un numéro valide")
+
 
 if __name__ == "__main__":
     main()
