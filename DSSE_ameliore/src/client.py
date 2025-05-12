@@ -245,24 +245,26 @@ class Client:
                         for word in self.format_line(line):
                             text = word + str(j)
                             l = self.prf(text)
-                            log_message("INFO",f"token generer  pour mot {word} CREATION INDEX: {l}")
                             mots_distincts.add(word)
-                            index[l] = []
-                            index[l].append(document)
+                            if l not in index:
+                                index[l] = []
+                            if document not in index[l]:
+                                index[l].append(document)
+                            log_message("INFO",f"Indexing: word : {word} -> l : {l}- j :{j} -> document : {document}")
                             
                             if (document not in id_compteur):
                                 id_compteur[document] = 0
                             id_compteur[document]+=1
                             if (word not in self.doc_words_map):
                                 self.doc_words_map[word] = set()
-                            log_message("INFO", f"AJOUTEEE :{word} trouve dans document {document}")
-                            self.doc_words_map[word].add(document)
+                            self.doc_words_map[word].add(j)
                 j+=1
                 
 
 
-        #ajout de valeurs factices
-
+        
+          #ajout de valeurs factices
+        log_message("INFO",f"AJOUT DE VALEUR FACTICE")
         # nombre de mots distinct 
         max = len(mots_distincts)
         # nbr de fois que chaque identifiant doit apparaitre dans l'index
@@ -277,13 +279,14 @@ class Client:
             z = j
             for document in os.listdir(self.client_path):
                 for l in range (1,max-id_compteur[document]):
-                    indice = self.prf( "0"*x+self.padForIndex(str(i),y)+self.padForIndex(str(l),y))
+                    text =  "0"*x+self.padForIndex(str(i),y)+self.padForIndex(str(l),y)
+                    indice = self.prf(text)
+                    #log_message("INFO",f"l'indice : {indice}")
+                    if indice in index:
+                        log_message("INFO",f"l'indice : {indice} existe deja")
                     index[indice] = [document]
-                i+=1
-
+                i+=1     
         
-
-
         # Écriture de l'index
         index_path = os.path.join(self.client_path, "index.json")
         try:
@@ -295,15 +298,13 @@ class Client:
 
     def trapdoor(self,word):
         trapdoor = []
-        log_message("INFO",f"nbr Word : {self.doc_words_map}")
-        nbrWord = len(self.doc_words_map[word])
-        log_message("INFO",f"nbr Word : {nbrWord}")
-        for j in range (nbrWord):
+        list_doc_index = self.doc_words_map[word]
+        log_message("INFO",f" list_doc_index : {list_doc_index} associé au mot {word}")
+        for j in (list_doc_index):
             text = word + str(j)
             l = self.prf(text)
-            log_message("INFO",f"token generer  : {l}")
+            log_message("INFO",f" l : {l} -> le j : {j}")
             trapdoor.append(l)
-        log_message("INFO",f"TRAPDOOR : {trapdoor}")
         return trapdoor
 
     def encrypt_index(self, regenerate=False):
@@ -321,6 +322,9 @@ class Client:
         except Exception as e:
             log_message("ERROR", f"Erreur à l'ouverture de l'index : {e}")
             return
+        
+        for word, enc_doc_list in index.items():
+            log_message("INFO",f"INDEX :  word : {word}  en_doc_list {enc_doc_list}")
 
         # On remplacer les noms des documents de l'index par les noms chiffrées en CBC
         new_index = {}
@@ -344,6 +348,7 @@ class Client:
             # C'est ici que tout se joue
             token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), self.key, 5).hex()
             encrypted_index[token] = enc_doc_list
+            log_message("INFO",f"ENCRYPTED WORD :{word} en doc list: {enc_doc_list}")
 
         # Sauvegarde de l'index chiffré
         try:
@@ -360,7 +365,6 @@ class Client:
         # Calcule le token de recherche sans exposer la clé au serveur
         try:
             return [ hashlib.pbkdf2_hmac("md5", t.encode('utf-8'), self.key, 5).hex() for t in  self.trapdoor(word) ]
-            #return hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), self.key, 5).hex()
         except Exception as e:
             log_message("ERROR", f"Erreur dans le calcul du token : {e}")
             return None

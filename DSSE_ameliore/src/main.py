@@ -4,8 +4,10 @@ import shutil
 from client import Client
 from server import Server
 from file_generator import FileGenerator
+from fastapi import FastAPI
 from config import PATHS, log_message, remove_residual_files
 import sys
+
 
 def main():
     # Initialisation de l'environnement
@@ -21,7 +23,7 @@ def main():
 
     # Création du client
     client = Client()
-    
+
     # Création de l'index
     client.create_index()
 
@@ -68,6 +70,7 @@ def main():
         # Recherche de mot
         handle_search(word, client, server)
 
+
 def handle_update_document(client):
     """Gère la mise à jour d'un document"""
     log_message("INFO", "Mise à jour d'un document")
@@ -110,6 +113,9 @@ def handle_update_document(client):
     except (ValueError, IndexError):
         log_message("ERROR", "Choix invalide")
 
+
+
+
 def handle_search(word, client, server):
     """Gère la recherche d'un mot"""
     search_token = client.calculate_search_token(word)
@@ -144,6 +150,7 @@ def handle_search(word, client, server):
         # Nettoyage des fichiers temporaires
         server.cleanup_temp_files(temp_files)
         
+
 
 if __name__ == "__main__":
     main()
