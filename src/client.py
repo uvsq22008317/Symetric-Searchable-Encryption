@@ -155,59 +155,93 @@ class Client:
                 except Exception as e:
                     log_message("ERROR", f"Impossible de supprimer {file} : {e}")
 
-    def update_document(self, original_filename, new_content):
+    def update_document(self, original_filename):
         log_message("INFO", f"Mise à jour du document {original_filename}")
 
-        # Vérification que l'index existe
-        index_path = os.path.join(self.client_path, "index.json")
-        if not os.path.exists(index_path):
-            log_message("ERROR", f"Index non trouvé dans le dossier client")
+        # Vérifie que le fichier existe dans la table de correspondance
+        if original_filename not in self.doc_name_map:
+            log_message("ERROR", f"Document {original_filename} non trouvé dans la table")
             return False
+        encrypted_filename = self.doc_name_map[original_filename]
+        if not self.get_file_from_server(encrypted_filename):
+            return False
+
+        encrypted_path = os.path.join(self.client_path, encrypted_filename)
+        decrypted_content = self.decrypt_file(encrypted_path)
         
-        try:
-            # Vérification que le fichier existe dans l'index
-            with open(index_path, "r", encoding="utf-8") as f:
-                index = json.load(f)
-            document_exists = any(original_filename in doc for word, doc in index.items())
-            if not document_exists:
-                log_message("ERROR", f"Document {original_filename} non trouvé dans l'index")
-                return False
-            
-            # Création du fichier dans le dossier client
-            doc_path = os.path.join(self.client_path, original_filename)
-            with open(doc_path, 'w', encoding='utf-8') as f:
-                f.write(new_content)
+        if not decrypted_content:
+            log_message("ERROR", "Échec du déchiffrement du fichier")
+            return False
 
-            # Régénération complète de l'index
-            encrypted_index_path = os.path.join(self.server_path, "encrypted_index.json")
-            if os.path.exists(index_path):
-                os.remove(index_path)
-            if os.path.exists(encrypted_index_path):
-                os.remove(encrypted_index_path)
-
-            self.create_index()
-            self.doc_name_map = self.encrypt_folder()
-            self.encrypt_index(regenerate=True)
-
-            # Déplacement des fichiers vers le serveur
-            self.move_encrypted_files_to_server()
-
-            # Déplacement de l'index vers le serveur
-            src_index = os.path.join(self.client_path, "encrypted_index.json")
-            dest_index = os.path.join(self.server_path, "encrypted_index.json")
-            shutil.move(src_index, dest_index)
-
-            # Nettoyage des fichiers originaux
-            for file in os.listdir(self.client_path):
-                if file.endswith(EXTENTIONS):
-                    os.remove(os.path.join(self.client_path, file))
-
-            log_message("INFO", f"Document {original_filename} mis à jour avec succès")
+        log_message("INFO", f"Contenu actuel de {original_filename}:")
+        print(decrypted_content.split(": ", 1)[1])  # affiche seulement le contenu
+        
+        log_message("INFO", "Entrez le nouveau contenu (appuyez sur Entrée pour garder l'actuel):")
+        new_content = input("> ").strip()
+        
+        if not new_content:
+            log_message("INFO", "Aucune modification apportée")
+            os.remove(encrypted_path)
             return True
-        
+
+        # cree un nouveau fichier avec le contenu modifié
+        new_file_path = os.path.join(self.client_path, original_filename)
+        try:
+            with open(new_file_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
         except Exception as e:
-            log_message("ERROR", f"Erreur durant la mise à jour du document : {e}")
+            log_message("ERROR", f"Erreur lors de l'écriture du nouveau contenu: {e}")
             return False
+        
+         # Chiffre le contenu
+        nonce = get_random_bytes(8)
+        ctr = Counter.new(64, prefix=nonce)
+        cipher_content = AES.new(self.key, AES.MODE_CTR, counter=ctr)
+        
+        with open(new_file_path, 'r', encoding='utf-8') as f:
+            plaintext = f.read().encode()
+            
+        encrypted_content = cipher_content.encrypt(pad(plaintext, 16, "iso7816"))
+
+        old_encrypted = self.doc_name_map.get(original_filename)
+        if old_encrypted:
+            old_path = os.path.join(self.server_path, old_encrypted)
+            try:
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception as e:
+                log_message("ERROR", f"Failed to delete old encrypted file: {e}")
+
+        # Chiffre le nom
+        iv = get_random_bytes(16)
+        cipher_name = AES.new(self.key, AES.MODE_CBC, iv=iv)
+        filename_clean = os.path.splitext(original_filename)[0].encode("utf-8")
+        encrypted_name = cipher_name.encrypt(pad(filename_clean, 16, "iso7816"))
+
+        # Création du nom du fichier encrypté
+        encrypted_filename = encrypted_name.hex() + ENCODED_EXTENTION
+        encrypted_path = os.path.join(PATHS["server"], encrypted_filename)
+        
+        # Sauvegarde du fichier chiffré
+        with open(encrypted_path, 'wb') as f:
+            name_len = len(encrypted_name).to_bytes(4, byteorder="big")
+            f.write(nonce + iv + name_len + encrypted_name + encrypted_content)
+        
+        # Maj de la table de correspondance
+        self.doc_name_map[original_filename] = encrypted_filename
+        log_message("DEBUG", f"Fichier chiffré et ajouté au serveur: {encrypted_filename}")
+    
+        # Maj l'index chiffré
+        self.create_index()
+        self.encrypt_index()
+        
+        # Déplacer le nouvel index chiffré vers le serveur
+        src = os.path.join(PATHS["client"], "encrypted_index.json")
+        dst = os.path.join(PATHS["server"], "encrypted_index.json")
+        shutil.move(src, dst)
+
+        log_message("INFO", f"Document {original_filename} mis à jour avec succès")
+        return True
     
     def formate_line(self, text):
         # On sépare sur toute ponctuation ou espace
@@ -301,6 +335,22 @@ class Client:
         except Exception as e:
             log_message("ERROR", f"Erreur dans le calcul du token : {e}")
             return None
+        
+    def get_file_from_server(self, encrypted_filename):
+        try:
+            src_path = os.path.join(self.server_path, encrypted_filename)
+            dst_path = os.path.join(self.client_path, encrypted_filename)
+            
+            if not os.path.exists(src_path):
+                log_message("ERROR", f"Fichier {encrypted_filename} non trouvé sur le serveur")
+                return False
+                
+            shutil.copy2(src_path, dst_path)
+            log_message("DEBUG", f"Fichier {encrypted_filename} copié depuis le serveur")
+            return True
+        except Exception as e:
+            log_message("ERROR", f"Erreur lors de la récupération du fichier: {e}")
+            return False
         
     def add_file_from_backup(self, filename):
         log_message("INFO", f"Traitement de {filename} du backup")

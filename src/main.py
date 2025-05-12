@@ -57,6 +57,7 @@ def main():
         elif word.lower() == "update":
             # Gestion de la mise à jour de document
             handle_update_document(client)
+            server.reload_index()
             continue
 
         elif word.lower() in ["add", "ajouter"]:
@@ -76,42 +77,27 @@ def main():
 def handle_update_document(client):
     """Gère la mise à jour d'un document"""
     log_message("INFO", "Mise à jour d'un document")
-    index_path = os.path.join(PATHS["client"], "index.json")
-    
-    if not os.path.exists(index_path):
-        log_message("ERROR", "Index non trouvé dans le dossier client")
-        return
-        
-    with open(index_path, 'r', encoding='utf-8') as f:
-        index = json.load(f)
-    
-    # Récupération de tous les documents
-    all_docs = set()
-    for docs in index.values():
-        all_docs.update(docs)
-    
-    if not all_docs:
+
+    if not client.doc_name_map:
         log_message("INFO", "Aucun document disponible pour mise à jour")
         return
-    
     log_message("INFO", "Sélectionnez le document à mettre à jour :")
-    for i, doc in enumerate(sorted(all_docs)):
-        log_message("INFO", f"{i + 1}: {doc}")
+    docs = sorted(client.doc_name_map.keys())
+    for i, doc in enumerate(docs, 1):
+        log_message("INFO", f"{i}: {doc}")
 
     try:
         choice = int(input("> ")) - 1
-        if choice < 0 or choice >= len(all_docs):
+        if choice < 0 or choice >= len(docs):
             log_message("ERROR", "Choix invalide")
             return
-        doc_name = sorted(all_docs)[choice]
-        log_message("INFO", f"Entrez le nouveau contenu pour {doc_name}:")
-        new_content = input("> ").strip()
-
-        if client.update_document(doc_name, new_content):
+        
+        doc_name = docs[choice]
+        if client.update_document(doc_name):
             log_message("INFO", "Document mis à jour avec succès")
         else:
             log_message("ERROR", "Échec de la mise à jour")
-            
+
     except (ValueError, IndexError):
         log_message("ERROR", "Choix invalide")
 
@@ -205,9 +191,8 @@ def handle_remove_file(client):
     for i, f in enumerate(backup_files, 1):
         log_message("INFO", f"{i}. {f}")
     
-    log_message("INFO", "Entrez le numéro du document à supprimer:")
-    
     while True:
+        log_message("INFO", "Entrez le numéro du document à supprimer ou quittez avec 'exit':")
         choice = input("> ").strip()
         if choice.lower() in ['q', 'quit', 'exit']:
             return
