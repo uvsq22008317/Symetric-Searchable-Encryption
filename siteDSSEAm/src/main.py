@@ -129,7 +129,7 @@ def handle_search(wordData: Word):
         database = Database()
 
         key =  base64.b64decode(os.getenv("KEY"))
-        
+
         print(f"===========================================KEY : {key}")
         doc_encrypt_info = ast.literal_eval(os.getenv("DOC_ENCRYPT_INFO"))
         doc_words_map = ast.literal_eval(os.getenv("DOC_WORDS_MAP"))
@@ -183,10 +183,7 @@ def write_doc_encrypt_info(en):
 def write_doc_words_map(en):
      with open(".env", "a") as f:
         f.write(f"DOC_WORDS_MAP={en}\n")
-#if __name__ == "__main__":
-#    main()
 
-#if __name__ == "__main__":
-#    import uvicorn
-
-#    uvicorn.run(app, host="127.0.0.1", port=8000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
