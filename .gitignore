@@ -132,7 +132,6 @@ Thumbs.db
 *.swo
 *.swn
 *.enc
-*.json
 
 Client/
 Serveur/
