@@ -1,30 +1,28 @@
 from contextlib import asynccontextmanager
 import json
 import os
-import shutil
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 from client import Client
 from server import Server
 from file_generator import FileGenerator
-from config import PATHS, log_message, remove_residual_files
+from config import PATHS, log_message
 
-import sys
 
 
 
 from Crypto.Random import get_random_bytes
 from database import Database
-
+from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def main(app: FastAPI):
 
+        load_dotenv()
         key =  get_random_bytes(16)
-        app.state.key = key
-        print(f"=================KEY :{app.state.key}")
+        writeKey(key)
 
         database  = Database()
 
@@ -34,16 +32,16 @@ async def main(app: FastAPI):
         docs  = FileGenerator.generate_random_file(PATHS["client"], num_files=10)
 
          # Chiffrement des documents revoie les document chiffree
-        doc_encrypted , doc_encryp_info = client.encrypt_folder(docs,key)
+        doc_encrypted , doc_encrypt_info = client.encrypt_folder(docs,key)
         for doc in doc_encrypted:
             database.addFile(doc)
 
-        app.state.doc_encryp_info  = doc_encryp_info
-
+        write_doc_encrypt_info(doc_encrypt_info)
         # Création de l'index
         index , doc_words_map = client.create_index(docs,key)
     
-        app.state.doc_words_map = doc_words_map
+        write_doc_words_map(doc_words_map)
+    
         # chiffrement de l'index
         encrypted_index =  client.encrypt_index(index,key)
         database.addIndex(encrypted_index)
@@ -128,9 +126,12 @@ def handle_search(wordData: Word):
         client = Client()
         database = Database()
 
+        key = os.getenv("KEY")
+        doc_encrypt_info = os.getenv("DOC_ENCRYPT_INFO")
+        doc_words_map = os.getenv("DOC_WORDS_MAP")
+
         """Gère la recherche d'un mot"""
-        print(f"=================KEY :{app.state.key}")
-        search_token = client.calculate_search_token(word,app.state.doc_words_map,app.state.key)
+        search_token = client.calculate_search_token(word,doc_words_map,key)
         if (search_token == None ):
               result["result"] = []
               return result
@@ -153,7 +154,7 @@ def handle_search(wordData: Word):
                 #docsDecrpyted.append(doc)
                 if doc:
                     log_message("INFO", f" doc found {doc}")
-                    decrypted_doc = client. decrypt_file(doc,app.state.doc_encryp_info,app.state.key)
+                    decrypted_doc = client. decrypt_file(doc,doc_encrypt_info,key)
 
                     docsDecrpyted.append(decrypted_doc)
                 else:
@@ -164,9 +165,18 @@ def handle_search(wordData: Word):
             
             return result
 
-@app.get("/key")
-def getKey(): 
-        return get_random_bytes(16)
+
+def writeKey(key): 
+    with open(".env", "w") as f:
+        f.write(f"KEY={key}")
+
+def write_doc_encrypt_info(en):
+     with open(".env", "w") as f:
+        f.write(f"DOC_ENCRYPT_INFO={en}")
+
+def write_doc_words_map(en):
+     with open(".env", "w") as f:
+        f.write(f"DOC_WORDS_MAP={en}")
 #if __name__ == "__main__":
 #    main()
 
