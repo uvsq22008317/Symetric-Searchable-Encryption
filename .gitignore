@@ -87,9 +87,9 @@ celerybeat-schedule
 /out-tsc
 
 # dependencies
-**/node_modules/*
-./siteDSSEAm/frontend/node_modules/*
-./siteDSSEAm/frontend/.angular/*
+**/node_modules/
+siteDSSEAm/frontend/node_modules/
+siteDSSEAm/frontend/.angular/
 # IDEs and editors
 /.idea
 .project
