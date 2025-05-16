@@ -1,0 +1,11 @@
+<main class="main">
+  <h1>Symetric Searchable Encryption</h1>
+ 
+  @if(!(auth.isAuthenticated$ | async)){
+    <h2>Bienvenue Veuillez vous connecter</h2>
+    <button mat-flat-button (click)="auth.loginWithRedirect()">Login</button>
+  } @else{
+    <button mat-flat-button (click)="logout()">Logout</button>
+  }
+</main>
+<router-outlet></router-outlet> 

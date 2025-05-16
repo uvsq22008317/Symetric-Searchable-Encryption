@@ -1,0 +1,44 @@
+<main class="main">
+    <h2>Recherche d'un mot</h2>
+    <div class="center-search">
+    <mat-form-field class="searchbar">
+      <mat-label>Rechercher un mot</mat-label>
+      <input matInput type="search" [(ngModel)]="word" />
+      <button
+        mat-icon-button
+        matSuffix
+        aria-label="Search"
+      (click)="search()"
+      >
+        <mat-icon>search</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+  @if (isNotFound) {
+  <div class="not-found">
+    {{ message }}
+  </div>
+  }
+  @else if (display && isLoading) {
+    <div  class="mat-spinner">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+   @else if (display && !isLoading){
+      <mat-paginator [length]="totalItems" 
+                      [pageSize]="pageSize" 
+                      [pageIndex]="currentPage"
+                      (page)="pageChanged($event)">
+      </mat-paginator>
+      <mat-list >
+        <mat-list-item *ngFor="let item of items">
+          <span matListItemTitle>{{ item.name }}</span>
+          <span matListItemLine>Description de {{ item.name }}</span>
+          <button mat-button (click)="afficherDocument(item.content)">
+          ouvrir
+          </button>
+        </mat-list-item>
+      </mat-list>
+    }
+  </main>
+  <router-outlet />

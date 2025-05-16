@@ -1,0 +1,44 @@
+
+html,body{
+  overflow: hidden; 
+}
+
+.searchbar{
+    min-width: 500px;
+    max-width: 500px;
+    border-radius: 12px;
+    background-color: white;
+    padding: 8px;
+   
+  
+}
+
+.not-found{
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+
+}
+
+.center-search{
+  display: flex;
+  justify-content: center;
+}
+
+h1{
+  text-align: center;
+  padding: 50px;
+}
+
+.element{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mat-spinner{
+  display: flex;
+  justify-content: center;
+
+}
