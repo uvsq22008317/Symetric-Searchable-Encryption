@@ -1,3 +1,4 @@
+import base64
 from contextlib import asynccontextmanager
 import json
 import os
@@ -16,6 +17,7 @@ from Crypto.Random import get_random_bytes
 from database import Database
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+import ast
 
 @asynccontextmanager
 async def main(app: FastAPI):
@@ -126,9 +128,11 @@ def handle_search(wordData: Word):
         client = Client()
         database = Database()
 
-        key = os.getenv("KEY")
-        doc_encrypt_info = os.getenv("DOC_ENCRYPT_INFO")
-        doc_words_map = os.getenv("DOC_WORDS_MAP")
+        key =  base64.b64decode(os.getenv("KEY"))
+        
+        print(f"===========================================KEY : {key}")
+        doc_encrypt_info = ast.literal_eval(os.getenv("DOC_ENCRYPT_INFO"))
+        doc_words_map = ast.literal_eval(os.getenv("DOC_WORDS_MAP"))
 
         """Gère la recherche d'un mot"""
         search_token = client.calculate_search_token(word,doc_words_map,key)
@@ -139,6 +143,8 @@ def handle_search(wordData: Word):
         matches = database.search_word(search_token)
         if not matches:
             log_message("INFO", "Aucun fichier trouvé pour ce mot.")
+            result["result"] = []
+            return []
         else:
             log_message("INFO", f"Mot trouvé dans {len(matches)} fichier(s)")
             print(f"search matches : {matches}")
@@ -167,16 +173,16 @@ def handle_search(wordData: Word):
 
 
 def writeKey(key): 
-    with open(".env", "w") as f:
-        f.write(f"KEY={key}")
+    with open(".env", "a") as f:
+        f.write(f"KEY={base64.b64encode(key).decode("utf-8")}\n")
 
 def write_doc_encrypt_info(en):
-     with open(".env", "w") as f:
-        f.write(f"DOC_ENCRYPT_INFO={en}")
+     with open(".env", "a") as f:
+        f.write(f"DOC_ENCRYPT_INFO={en}\n")
 
 def write_doc_words_map(en):
-     with open(".env", "w") as f:
-        f.write(f"DOC_WORDS_MAP={en}")
+     with open(".env", "a") as f:
+        f.write(f"DOC_WORDS_MAP={en}\n")
 #if __name__ == "__main__":
 #    main()
 

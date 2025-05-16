@@ -272,8 +272,11 @@ class Client:
     def trapdoor(self,word,doc_words_map,key):
         log_message("INFO",f" ================TRAPDOOR : {word}")
         trapdoor = []
-
+        print(f"doc word : {doc_words_map}")
+        print(f"========================type list oc : {type(doc_words_map)}")
         list_doc_index = doc_words_map[word]
+        print(f"list doc index : {list_doc_index}")
+        print(f"========================type list oc : {type(list_doc_index)}")
         log_message("INFO",f" list_doc_index : {list_doc_index} associé au mot {word}")
         for j in (list_doc_index):
             text = word + str(j)
@@ -310,5 +313,6 @@ class Client:
         try:
             return [ hashlib.pbkdf2_hmac("md5", t.encode('utf-8'), key, 5).hex() for t in  self.trapdoor(word,doc_words_map ,key) ]
         except Exception as e:
+            
             log_message("ERROR", f"Erreur dans le calcul du token : {e}")
             return None
