@@ -23,21 +23,12 @@ class Server :
         else:
             self.encrypted_index = {}
 
-    def reload_index(self):
-        self.load_index()
-
     def search_word(self, token):
         # Recherche par token pré-calculé par le client
         try:
-            docs = []
-            for t in token:
-                log_message("INFO",f" search word with token : {t}")
-                docs+=(self.encrypted_index.get(t, []))
-                log_message("INFO",f" la liste  : {self.encrypted_index.get(t, [])}")
-            log_message("INFO",f" docs indice return : {docs}")
-            return docs
+            return self.encrypted_index.get(token, [])
         except Exception as e:
-            log_message("ERROR", f"Erreur Server pendant la recherche du mot : {e}")
+            log_message("ERROR", f"Erreur pendant la recherche du mot : {e}")
             return []
         
     def transfer_files_to_client(self, encrypted_files):
