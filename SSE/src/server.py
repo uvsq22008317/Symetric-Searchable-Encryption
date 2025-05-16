@@ -23,6 +23,9 @@ class Server :
         else:
             self.encrypted_index = {}
 
+    def reload_index(self):
+        self.load_index()
+
     def search_word(self, token):
         # Recherche par token pré-calculé par le client
         try:
