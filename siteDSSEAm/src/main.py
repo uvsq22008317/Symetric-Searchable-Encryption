@@ -174,7 +174,8 @@ def handle_search(wordData: Word):
 
 def writeKey(key): 
     with open(".env", "a") as f:
-        f.write(f"KEY={base64.b64encode(key).decode("utf-8")}\n")
+        bese64Key = base64.b64encode(key).decode("utf-8")
+        f.write(f"KEY={bese64Key}\n")
 
 def write_doc_encrypt_info(en):
      with open(".env", "a") as f:
@@ -186,4 +187,4 @@ def write_doc_words_map(en):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
