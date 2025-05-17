@@ -48,6 +48,8 @@ FRUITS_LIST = [
 ]
 
 def remove_residual_files(path):
+    if not os.path.exists(path):
+        return
     for file in os.listdir(path):
         file_path = os.path.join(path, file)
         if os.path.isfile(file_path):
