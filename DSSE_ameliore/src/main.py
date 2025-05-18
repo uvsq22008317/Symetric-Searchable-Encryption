@@ -1,12 +1,15 @@
 import json
 import os
 import shutil
-from client import Client
-from server import Server
-from file_generator import FileGenerator
-from fastapi import FastAPI
-from config import EXTENTIONS, PATHS, log_message, remove_residual_files
+from DSSE_ameliore.src.client import Client
+from DSSE_ameliore.src.server import Server
+from DSSE_ameliore.src.file_generator import FileGenerator
+from DSSE_ameliore.src.config import EXTENTIONS, PATHS, log_message, remove_residual_files, FRUITS_LIST
 import sys
+import time
+
+
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -80,6 +83,28 @@ def main():
         handle_search(word, client, server)
 
 
+
+
+def handle_search_for_graph_dsse_ameliore(word,client,server):
+        """Gère la recherche d'un mot"""
+        search_token = client.calculate_search_token(word)
+        matches = server.search_word(search_token)
+        if not matches:
+            #log_message("INFO", f"Mot non trouvé")
+            return 0
+        else:
+            #log_message("INFO", f"Mot trouvé dans {len(matches)} fichier(s)")
+            temp_files = server.transfer_files_to_client(matches)
+
+            # Déchiffrement et affichage des résultats
+            for enc_file in matches:
+                result = client.decrypt_file(enc_file)
+                result
+            # Nettoyage des fichiers temporaires
+            server.cleanup_temp_files(temp_files)
+
+
+
 def handle_update_document(client):
     """Gère la mise à jour d'un document"""
     log_message("INFO", "Mise à jour d'un document")
@@ -120,7 +145,7 @@ def handle_search(word, client, server):
         # Déchiffrement et affichage des résultats
         for enc_file in matches:
             server_path = os.path.join(PATHS["server"], enc_file)
-            result = client.decrypt_file(server_path)
+            result = client.decrypt_file(enc_file)
             if result:
                 log_message("INFO", f"{result}")
             else:

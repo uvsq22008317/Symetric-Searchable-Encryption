@@ -3,12 +3,12 @@ import json
 import hmac
 import hashlib
 import shutil
-from config import log_message, PATHS
+from DSSE_ameliore.src.config import PATHS , log_message
 
 class Server :
-    def __init__(self, client):
+    def __init__(self, client,server_path=None):
         self.client = client
-        self.server_path = PATHS["server"]
+        self.server_path = server_path or  PATHS["server"]
         self.encrypted_index_path = os.path.join(self.server_path, "encrypted_index.json")
         self.load_index()
 
@@ -53,7 +53,7 @@ class Server :
                 shutil.copy2(server_path, client_path)
                 temp_files.append(client_path)
                 log_message("DEBUG", f"Fichier transféré temporairement : {enc_file}")
-            else:
+            #else:
                 log_message("WARNING", f"Fichier non trouvé sur le serveur : {server_path}")
         
         return temp_files
@@ -65,4 +65,5 @@ class Server :
                 os.remove(file)
                 log_message("DEBUG", f"Fichier temporaire supprimé : {os.path.basename(file)}")
             except Exception as e:
+                e
                 log_message("ERROR", f"Erreur de suppression du fichier {file} : {e}")

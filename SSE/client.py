@@ -8,15 +8,16 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad, unpad
-from config import EXTENTIONS, PATHS, log_message, ENCODED_EXTENTION
+from SSE.config import EXTENTIONS, PATHS, ENCODED_EXTENTION, log_message
 
 
 class Client:
-    def __init__(self, key=None):
+    def __init__(self, key=None,client_path=None,server_path=None , backup_path=None):
         self.key = key or get_random_bytes(16)
-        self.client_path = PATHS["client"]
-        self.server_path = PATHS["server"]
-        self.backup_path = PATHS["backup"]
+        self.client_path =client_path or PATHS["client"]
+        print(f"INIT : {self.client_path}")
+        self.server_path = server_path or PATHS["server"]
+        self.backup_path = backup_path or PATHS["backup"]
         self.ensure_directories()
         self.doc_name_map = {}
 
@@ -32,7 +33,7 @@ class Client:
         return unpad(data, 16, "iso7816")
 
     def encrypt_folder(self):
-        log_message("INFO", f"Encryption du dossier {self.client_path}")
+        log_message("INFO", f"Encryption du dossier  {self.client_path}")
         
         if not os.path.isdir(self.client_path):
             log_message("ERROR", f"Erreur : le path source n'est pas un dossier : {self.client_path}")
@@ -82,7 +83,8 @@ class Client:
         log_message("DEBUG", f"Encryption du dossier {self.client_path} terminée")
         return self.doc_name_map
     
-    def decrypt_file(self, encrypted_file_path):
+    def decrypt_file(self, encrypted_file_name):
+        encrypted_file_path  = os.path.join(self.server_path, encrypted_file_name)
         log_message("DEBUG", f"Décryption du fichier {encrypted_file_path}")
 
         if not os.path.isfile(encrypted_file_path):
@@ -153,6 +155,7 @@ class Client:
                     os.remove(full_path)
                     log_message("DEBUG", f"Fichier supprimé : {file}")
                 except Exception as e:
+                    e
                     log_message("ERROR", f"Impossible de supprimer {file} : {e}")
 
     def formate_line(self, text):
@@ -188,6 +191,7 @@ class Client:
                 json.dump(index, json_file, indent=4, ensure_ascii=False)
             log_message("DEBUG", f"Index créé avec succès dans : {index_path}")
         except Exception as e:
+            e
             log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
 
     def encrypt_index(self, regenerate=False):

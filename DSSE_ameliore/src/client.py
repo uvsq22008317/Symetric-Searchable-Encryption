@@ -9,15 +9,15 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad, unpad
-from config import EXTENTIONS, PATHS, log_message, ENCODED_EXTENTION
+from DSSE_ameliore.src.config import EXTENTIONS, PATHS, ENCODED_EXTENTION ,log_message
 
 
 class Client:
-    def __init__(self, key=None):
+    def __init__(self, key=None,client_path=None,server_path = None , backup_path=None):
         self.key = key or get_random_bytes(16)
-        self.client_path = PATHS["client"]
-        self.server_path = PATHS["server"]
-        self.backup_path = PATHS["backup"]
+        self.client_path =client_path or PATHS["client"]
+        self.server_path = server_path or PATHS["server"]
+        self.backup_path = backup_path or PATHS["backup"]
         self.ensure_directories()
         self.doc_name_map = {}
         self.doc_words_map = {}
@@ -84,7 +84,8 @@ class Client:
         log_message("DEBUG", f"Encryption du dossier {self.client_path} terminée")
         return self.doc_name_map
     
-    def decrypt_file(self, encrypted_file_path):
+    def decrypt_file(self, encrypted_file_name):
+        encrypted_file_path = os.path.join(self.server_path, encrypted_file_name)
         log_message("DEBUG", f"Décryption du fichier {encrypted_file_path}")
 
         if not os.path.isfile(encrypted_file_path):
@@ -155,6 +156,7 @@ class Client:
                     os.remove(full_path)
                     log_message("DEBUG", f"Fichier supprimé : {file}")
                 except Exception as e:
+                    e
                     log_message("ERROR", f"Impossible de supprimer {file} : {e}")
 
     def update_document(self, original_filename):
@@ -212,6 +214,7 @@ class Client:
                 if os.path.exists(old_path):
                     os.remove(old_path)
             except Exception as e:
+                e
                 log_message("ERROR", f"Failed to delete old encrypted file: {e}")
 
         # Chiffre le nom
@@ -267,16 +270,19 @@ class Client:
         index = {}
     
         j=0
-        
+        # max = nbr max de mot ds un doc
+        max = 0
         mots_distincts = set()
         id_compteur = {}
         for document in os.listdir(self.client_path):
+            nbr_mots = 0
             doc_path = os.path.join(self.client_path, document)
             if document.endswith(EXTENTIONS) and os.path.isfile(doc_path):
                 log_message("DEBUG", f"Lecture du fichier {document}")
                 with open(doc_path, "r", encoding="utf-8") as file:
                     for line in file:
                         for word in self.formate_line(line):
+                            nbr_mots+=1
                             text = word + str(j)
                             l = self.prf(text)
                             mots_distincts.add(word)
@@ -284,7 +290,7 @@ class Client:
                                 index[l] = []
                             if document not in index[l]:
                                 index[l].append(document)
-                            log_message("INFO",f"Indexing: word : {word} -> l : {l}- j :{j} -> document : {document}")
+                            #log_message("INFO",f"Indexing: word : {word} -> l : {l}- j :{j} -> document : {document}")
                             
                             if (document not in id_compteur):
                                 id_compteur[document] = 0
@@ -293,14 +299,15 @@ class Client:
                                 self.doc_words_map[word] = set()
                             self.doc_words_map[word].add(j)
                 j+=1
+            if (nbr_mots > max):
+                max = nbr_mots
                 
 
 
         
-          #ajout de valeurs factices
-        log_message("INFO",f"AJOUT DE VALEUR FACTICE")
-        # nombre de mots distinct 
-        max = len(mots_distincts)
+        #ajout de valeurs factices
+        #log_message("INFO",f"AJOUT DE VALEUR FACTICE")
+        
         # nbr de fois que chaque identifiant doit apparaitre dans l'index
         s = max * j
 
@@ -311,15 +318,19 @@ class Client:
             x=125
             y = max
             z = j
+            #log_message("INFO",f"list document : {os.listdir(self.client_path)}")
+            #log_message("INFO",f"list id compteur  : {id_compteur}")
+           
             for document in os.listdir(self.client_path):
-                for l in range (1,max-id_compteur[document]):
-                    text =  "0"*x+self.padForIndex(str(i),y)+self.padForIndex(str(l),y)
-                    indice = self.prf(text)
-                    #log_message("INFO",f"l'indice : {indice}")
-                    if indice in index:
-                        log_message("INFO",f"l'indice : {indice} existe deja")
-                    index[indice] = [document]
-                i+=1     
+                if document.endswith(EXTENTIONS) and os.path.isfile(doc_path):
+                    #log_message("INFO",f"list resultat idcomteur[doc] : {document}")
+                    #log_message("INFO",f"list resultat idcomteur[doc] : {id_compteur[document]}")
+                    for l in range (1,max-id_compteur[document]):
+                        text =  "0"*x+self.padForIndex(str(i),y)+self.padForIndex(str(l),y)
+                        indice = self.prf(text)
+                        #log_message("INFO",f"l'indice : {indice}")
+                        index[indice] = [document]
+                    i+=1     
         
         # Écriture de l'index
         index_path = os.path.join(self.client_path, "index.json")
@@ -328,6 +339,7 @@ class Client:
                 json.dump(index, json_file, indent=4, ensure_ascii=False)
             log_message("DEBUG", f"Index créé avec succès dans : {index_path}")
         except Exception as e:
+            e
             log_message("ERROR", f"Erreur lors de la création de l'index : {e}")
 
     def trapdoor(self,word):
@@ -422,9 +434,6 @@ class Client:
             log_message("ERROR", f"Erreur à l'ouverture de l'index : {e}")
             return
         
-        for word, enc_doc_list in index.items():
-            log_message("INFO",f"INDEX :  word : {word}  en_doc_list {enc_doc_list}")
-
         # On remplacer les noms des documents de l'index par les noms chiffrées en CBC
         new_index = {}
         for word, doc_list in index.items():
@@ -432,7 +441,7 @@ class Client:
             for doc in doc_list:
                 if doc in self.doc_name_map:
                     new_doc_list.append(self.doc_name_map[doc])
-                else:
+                #else:   
                     log_message("WARNING", f"{doc} non trouvé dans la table de correspondance CLIENT")
             new_index[word] = new_doc_list
 

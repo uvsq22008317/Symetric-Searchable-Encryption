@@ -1,6 +1,6 @@
 import os
 import random
-from config import log_message, FILENAMES_LIST, EXTENTIONS, FRUITS_LIST
+from DSSE_ameliore.src.config import log_message, FILENAMES_LIST, EXTENTIONS, FRUITS_LIST
 
 
 class FileGenerator:
