@@ -1,10 +1,10 @@
 import json
 import os
 import shutil
-from client import Client
-from server import Server
-from file_generator import FileGenerator
-from config import EXTENTIONS, PATHS, log_message, remove_residual_files
+from DSSE.src.client import Client
+from DSSE.src.server import Server
+from DSSE.src.file_generator import FileGenerator
+from DSSE.src.config import EXTENTIONS, PATHS, log_message, remove_residual_files
 import sys
 
 def main():

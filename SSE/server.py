@@ -44,7 +44,7 @@ class Server :
                 shutil.copy2(server_path, client_path)
                 temp_files.append(client_path)
                 log_message("DEBUG", f"Fichier transféré temporairement : {enc_file}")
-            #else:
+            else:
                 log_message("WARNING", f"Fichier non trouvé sur le serveur : {server_path}")
         
         return temp_files
