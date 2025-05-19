@@ -81,7 +81,7 @@ def encrypt_index(source, key, doc_name_map):
         encrypted_word = cipher.encrypt(pad(word.encode("utf-8"), 16, "iso7816")).hex()
 
         # C'est ici que tout se joue
-        token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), key, 5).hex()
+        token = hashlib.pbkdf2_hmac("sha256", word.encode('utf-8'), key, 600_000).hex()
         encrypted_index[token] = enc_doc_list
 
     # Sauvegarde de l’index chiffré

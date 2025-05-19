@@ -99,7 +99,7 @@ def search_word(word, key):
         return []
 
     try:
-        token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), key, 5).hex()
+        token = hashlib.pbkdf2_hmac("sha256", word.encode('utf-8'), key, 600_000).hex()
         return encrypted_index.get(token, [])
     except Exception as e:
         log_message("ERROR", f"Erreur pendant la recherche du mot : {e}")
