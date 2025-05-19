@@ -255,22 +255,20 @@ class Client:
         return [word for word in raw_words if word]
 
     def prf(self,text):
-        return hmac.new(self.key, text.encode('utf-8'), digestmod=hashlib.sha256).hexdigest()
+        return hmac.new(self.key, text.encode('utf-8'), digestmod=hashlib.sha512).hexdigest()
     
     def padForIndex(self,t,taille):
         return t.zfill(taille)
 
     def create_index(self):
-        k =  get_random_bytes(16)
         if not os.path.isdir(self.client_path):
             log_message("ERROR", f"Le chemin {self.client_path} n'est pas un dossier.")
             return
-
         log_message("INFO", f"Création de l'index...")
         index = {}
     
         j=0
-        # max = nbr max de mot ds un doc
+        # max = nombre maximum de mots dans un document
         max = 0
         mots_distincts = set()
         id_compteur = {}
@@ -308,7 +306,7 @@ class Client:
         #ajout de valeurs factices
         #log_message("INFO",f"AJOUT DE VALEUR FACTICE")
         
-        # nbr de fois que chaque identifiant doit apparaitre dans l'index
+        # nombre de fois que chaque identifiant doit apparaitre dans l'index
         s = max * j
 
         s_prime = len(index)
@@ -345,11 +343,11 @@ class Client:
     def trapdoor(self,word):
         trapdoor = []
         list_doc_index = self.doc_words_map[word]
-        log_message("INFO",f" list_doc_index : {list_doc_index} associé au mot {word}")
+        #log_message("INFO",f" list_doc_index : {list_doc_index} associé au mot {word}")
         for j in (list_doc_index):
             text = word + str(j)
             l = self.prf(text)
-            log_message("INFO",f" l : {l} -> le j : {j}")
+            #log_message("INFO",f" l : {l} -> le j : {j}")
             trapdoor.append(l)
         return trapdoor
     
@@ -435,28 +433,15 @@ class Client:
             return
         
         # On remplacer les noms des documents de l'index par les noms chiffrées en CBC
-        new_index = {}
+        encrypted_index = {}
         for word, doc_list in index.items():
             new_doc_list = []
             for doc in doc_list:
                 if doc in self.doc_name_map:
                     new_doc_list.append(self.doc_name_map[doc])
-                #else:   
+                else:   
                     log_message("WARNING", f"{doc} non trouvé dans la table de correspondance CLIENT")
-            new_index[word] = new_doc_list
-
-        # On chiffre uniquement les mots et pas les noms de fichiers déjà chiffrées
-        encrypted_index = {}
-        for word, enc_doc_list in new_index.items():
-            """ Pas utilisé ?
-            iv = get_random_bytes(16)
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            encrypted_word = cipher.encrypt(pad(word.encode("utf-8"), 16, "iso7816")).hex()
-            """
-            # C'est ici que tout se joue
-            token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), self.key, 5).hex()
-            encrypted_index[token] = enc_doc_list
-            log_message("INFO",f"ENCRYPTED WORD :{word} en doc list: {enc_doc_list}")
+            encrypted_index[word] = new_doc_list
 
         # Sauvegarde de l'index chiffré
         try:
@@ -472,7 +457,7 @@ class Client:
     def calculate_search_token(self, word):
         # Calcule le token de recherche sans exposer la clé au serveur
         try:
-            return [ hashlib.pbkdf2_hmac("md5", t.encode('utf-8'), self.key, 5).hex() for t in  self.trapdoor(word) ]
+            return self.trapdoor(word)
         except Exception as e:
             log_message("ERROR", f"Erreur dans le calcul du token : {e}")
             return None

@@ -83,7 +83,7 @@ class Client:
 
     def decrypt_file(self, encrypted_doc,doc_encryp_info,key):
             
-            print(f" encrypted doc : {encrypted_doc}")
+            #print(f" encrypted doc : {encrypted_doc}")
             
             encrypted_name = encrypted_doc[0]["name"]
             encrypted_name_bytes = bytes.fromhex(encrypted_name)
@@ -95,7 +95,7 @@ class Client:
 
             # Déchiffrement du nom du fichier
             cipher_name = AES.new(key, AES.MODE_CBC, iv=iv)
-            print(f"encrypted name : {encrypted_name}")
+            #print(f"encrypted name : {encrypted_name}")
             decrypted_name = self.unpad(cipher_name.decrypt(encrypted_name_bytes)).decode("utf-8")
 
             # Déchiffrement du contenu
@@ -270,18 +270,11 @@ class Client:
         return index , self.doc_words_map
 
     def trapdoor(self,word,doc_words_map,key):
-        log_message("INFO",f" ================TRAPDOOR : {word}")
         trapdoor = []
-        print(f"doc word : {doc_words_map}")
-        print(f"========================type list oc : {type(doc_words_map)}")
         list_doc_index = doc_words_map[word]
-        print(f"list doc index : {list_doc_index}")
-        print(f"========================type list oc : {type(list_doc_index)}")
-        log_message("INFO",f" list_doc_index : {list_doc_index} associé au mot {word}")
         for j in (list_doc_index):
             text = word + str(j)
             l = self.prf(text,key)
-            log_message("INFO",f" l : {l} -> le j : {j}")
             trapdoor.append(l)
         return trapdoor
 
@@ -296,23 +289,15 @@ class Client:
                     new_doc_list.append(self.doc_name_map[doc["name"]])
                 else:
                     log_message("WARNING", f"{doc} non trouvé dans la table de correspondance CLIENT")
-            new_index[word] = new_doc_list
-
+                docu = {"token": word , "doc": new_doc_list}
+                self.encrypted_index.append(docu)
         # On chiffre uniquement les mots et pas les noms de fichiers déjà chiffrées
-        
-        for word, enc_doc_list in new_index.items():
-            # C'est ici que tout se joue
-            token = hashlib.pbkdf2_hmac("md5", word.encode('utf-8'), key, 5).hex()
-            doc = {"token": token , "doc": enc_doc_list}
-            self.encrypted_index.append(doc)
         return  self.encrypted_index
         
     def calculate_search_token(self, word,doc_words_map,key):
-        print(f"word {word} key : {key}")
         # Calcule le token de recherche sans exposer la clé au serveur
         try:
-            return [ hashlib.pbkdf2_hmac("md5", t.encode('utf-8'), key, 5).hex() for t in  self.trapdoor(word,doc_words_map ,key) ]
+            return self.trapdoor(word,doc_words_map ,key)
         except Exception as e:
-            
             log_message("ERROR", f"Erreur dans le calcul du token : {e}")
             return None

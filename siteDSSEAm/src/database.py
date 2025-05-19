@@ -25,10 +25,7 @@ class Database:
     
     # index sous la forme : {'token': '....', 'doc': ['......enc']}
     def addIndex(self,text):
-        print("#######################################################")
-        print(f"{text}")
         self.index.insert_many(text)
-        print("#######################################################")
 
 
     

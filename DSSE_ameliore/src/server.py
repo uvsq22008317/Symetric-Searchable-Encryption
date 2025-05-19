@@ -31,10 +31,10 @@ class Server :
         try:
             docs = []
             for t in token:
-                log_message("INFO",f" search word with token : {t}")
+                #log_message("INFO",f" search word with token : {t}")
                 docs+=(self.encrypted_index.get(t, []))
-                log_message("INFO",f" la liste  : {self.encrypted_index.get(t, [])}")
-            log_message("INFO",f" docs indice return : {docs}")
+                #log_message("INFO",f" la liste  : {self.encrypted_index.get(t, [])}")
+            #log_message("INFO",f" docs indice return : {docs}")
             return docs
         except Exception as e:
             log_message("ERROR", f"Erreur Server pendant la recherche du mot : {e}")
@@ -53,7 +53,7 @@ class Server :
                 shutil.copy2(server_path, client_path)
                 temp_files.append(client_path)
                 log_message("DEBUG", f"Fichier transféré temporairement : {enc_file}")
-            #else:
+            else:
                 log_message("WARNING", f"Fichier non trouvé sur le serveur : {server_path}")
         
         return temp_files

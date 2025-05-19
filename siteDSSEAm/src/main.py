@@ -129,8 +129,6 @@ def handle_search(wordData: Word):
         database = Database()
 
         key =  base64.b64decode(os.getenv("KEY"))
-
-        print(f"===========================================KEY : {key}")
         doc_encrypt_info = ast.literal_eval(os.getenv("DOC_ENCRYPT_INFO"))
         doc_words_map = ast.literal_eval(os.getenv("DOC_WORDS_MAP"))
 
@@ -139,7 +137,6 @@ def handle_search(wordData: Word):
         if (search_token == None ):
               result["result"] = []
               return result
-        print(f"search token found : {search_token}")
         matches = database.search_word(search_token)
         if not matches:
             log_message("INFO", "Aucun fichier trouvé pour ce mot.")
@@ -147,19 +144,19 @@ def handle_search(wordData: Word):
             return []
         else:
             log_message("INFO", f"Mot trouvé dans {len(matches)} fichier(s)")
-            print(f"search matches : {matches}")
+            #print(f"search matches : {matches}")
             docsDecrpyted = []
             # Déchiffrement et affichage des résultats
             for enc_doc in matches:
-                log_message("INFO", f" match encrypted found {enc_doc}")
+                #log_message("INFO", f" match encrypted found {enc_doc}")
                 name_crypted = enc_doc["doc"][0]
-                print(f"name crypted : {name_crypted}")
+                #print(f"name crypted : {name_crypted}")
                 doc = database.searchFile(name_crypted)
-                log_message("DOC FOUND hello ", f"{doc}")
+                #log_message("DOC FOUND hello ", f"{doc}")
 
                 #docsDecrpyted.append(doc)
                 if doc:
-                    log_message("INFO", f" doc found {doc}")
+                   # log_message("INFO", f" doc found {doc}")
                     decrypted_doc = client. decrypt_file(doc,doc_encrypt_info,key)
 
                     docsDecrpyted.append(decrypted_doc)
