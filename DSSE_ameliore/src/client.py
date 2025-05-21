@@ -379,32 +379,51 @@ class Client:
             with open(file_path, 'r', encoding='utf-8') as f:
                 new_content = f.read()
             
-             # Extraire les mots anciens et nouveaux
-            old_words = set(self.formate_line(old_content)) if old_content else set()
-            new_words = set(self.formate_line(new_content))
-        
-            # Mots à supprimer (présents avant mais plus maintenant)
+            # Formatage et traitement du nouveau contenu
+            new_words = set()
+            for line in new_content.splitlines():
+                for word in self.formate_line(line):
+                    new_words.add(word)
+
+            # Ancien contenu : traiter uniquement si fourni
+            old_words = set()
+            if old_content is not None:
+                for line in old_content.splitlines():
+                    for word in self.formate_line(line):
+                        old_words.add(word)
+            
+             # Supprimer les mots qui ne sont plus présents
             words_to_remove = old_words - new_words
-            
-            # Mots à ajouter (nouveaux ou déjà présents)
-            words_to_add = new_words
-            
-            # supprimer les mots qui ne sont plus présents
             for word in words_to_remove:
-                if word in index and filename in index[word]:
-                    index[word].remove(filename)
-                    if not index[word]:  # Supprimer le mot s'il n'a plus de fichiers
-                        del index[word]
-                    log_message("DEBUG", f"Mot supprimé de l'index: {word}")
-            
-            # Puis ajouter les nouveaux mots
+                for j in self.doc_words_map.get(word, set()):
+                    text = word + str(j)
+                    l = self.prf(text)
+                    if l in index and filename in index[l]:
+                        index[l].remove(filename)
+                        if not index[l]:
+                            del index[l]
+
+                if word in self.doc_words_map:
+                    self.doc_words_map[word].discard(j)
+                    if not self.doc_words_map[word]:
+                        del self.doc_words_map[word]
+
+            # Ajouter les nouveaux mots
+            words_to_add = new_words - old_words
             for word in words_to_add:
-                if word not in index:
-                    index[word] = []
-                if filename not in index[word]:
-                    index[word].append(filename)
-                    log_message("DEBUG", f"Mot ajouté/mis à jour dans l'index: {word}")
-            
+                if word not in self.doc_words_map:
+                    self.doc_words_map[word] = set()
+
+                for j in range(len(self.doc_words_map[word]) + 1):
+                    text = word + str(j)
+                    l = self.prf(text)
+                    if l not in index:
+                        index[l] = []
+                    if filename not in index[l]:
+                        index[l].append(filename)
+
+                    self.doc_words_map[word].add(j)
+                    
             # Sauvegarder le nouvel index
             with open(index_path, 'w', encoding='utf-8') as f:
                 json.dump(index, f, indent=4, ensure_ascii=False)
