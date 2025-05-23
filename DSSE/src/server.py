@@ -3,7 +3,7 @@ import json
 import hmac
 import hashlib
 import shutil
-from config import log_message, PATHS
+from DSSE.src.config import log_message, PATHS
 
 class Server :
     def __init__(self, client):

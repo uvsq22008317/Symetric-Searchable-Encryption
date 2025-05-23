@@ -8,7 +8,7 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad, unpad
-from config import EXTENTIONS, PATHS, log_message, ENCODED_EXTENTION
+from DSSE.src.config import EXTENTIONS, PATHS, log_message, ENCODED_EXTENTION
 
 
 class Client:
