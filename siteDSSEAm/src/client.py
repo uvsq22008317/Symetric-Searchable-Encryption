@@ -1,4 +1,5 @@
 
+import base64
 import hashlib
 import hmac
 import os
@@ -54,7 +55,7 @@ class Client:
             encrypted_name = cipher_name.encrypt(self.pad(name.encode("utf-8")))
 
            #Ajout info utile 
-            info = {"nonce": nonce , "iv": iv }
+            info = {"nonce": base64.b64encode(nonce).decode() , "iv": base64.b64encode(iv).decode() }
             self.doc_encryp_info[encrypted_name.hex()] = info
             encrypted_doc = encrypted_name.hex() + ENCODED_EXTENTION
 
@@ -74,8 +75,8 @@ class Client:
     def decrypt_file_name(self,encrypted_doc,doc_encryp_info,key):
             encrypted_name = encrypted_doc["doc"][0]
             print(f" doc encrypt info : {doc_encryp_info}")
-            nonce = doc_encryp_info[encrypted_name]["nonce"]
-            iv = doc_encryp_info[encrypted_name]["iv"]
+            nonce = base64.b64decode(doc_encryp_info[encrypted_name]["nonce"])
+            iv =base64.b64decode(doc_encryp_info[encrypted_name]["iv"])
             # Déchiffrement du nom du fichier
             cipher_name = AES.new(key, AES.MODE_CBC, iv=iv)
             decrypted_name = self.unpad(cipher_name.decrypt(encrypted_name)).decode("utf-8")
@@ -90,8 +91,8 @@ class Client:
             encrypted_content = encrypted_doc[0]["text"]
             encrypted_content_bytes  = bytes.fromhex(encrypted_content)
 
-            nonce = doc_encryp_info[encrypted_name]["nonce"]
-            iv = doc_encryp_info[encrypted_name]["iv"]
+            nonce = base64.b64decode(doc_encryp_info[encrypted_name]["nonce"])
+            iv = base64.b64decode(doc_encryp_info[encrypted_name]["iv"])
 
             # Déchiffrement du nom du fichier
             cipher_name = AES.new(key, AES.MODE_CBC, iv=iv)

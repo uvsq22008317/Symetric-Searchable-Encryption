@@ -24,7 +24,7 @@ async def main(app: FastAPI):
 
         load_dotenv()
         key =  get_random_bytes(16)
-        writeKey(key)
+        #writeKey(key)
 
         database  = Database()
 
@@ -38,12 +38,14 @@ async def main(app: FastAPI):
         for doc in doc_encrypted:
             database.addFile(doc)
 
-        write_doc_encrypt_info(doc_encrypt_info)
+        #write_doc_encrypt_info(doc_encrypt_info)
         # Création de l'index
         index , doc_words_map = client.create_index(docs,key)
     
-        write_doc_words_map(doc_words_map)
+        #write_doc_words_map(doc_words_map)
     
+
+        write_env(key,doc_words_map,doc_encrypt_info)
         # chiffrement de l'index
         encrypted_index =  client.encrypt_index(index,key)
         database.addIndex(encrypted_index)
@@ -75,60 +77,68 @@ app.add_middleware(
 
 class Word(BaseModel):
      word: str
-        
 
-def handle_update_document(client):
-        """Gère la mise à jour d'un document"""
-        log_message("INFO", "Mise à jour d'un document")
-        index_path = os.path.join(PATHS["client"], "index.json")
-        
-        if not os.path.exists(index_path):
-            log_message("ERROR", "Index non trouvé dans le dossier client")
-            return
-            
-        with open(index_path, 'r', encoding='utf-8') as f:
-            index = json.load(f)
-        
-        # Récupération de tous les documents
-        all_docs = set()
-        for docs in index.values():
-            all_docs.update(docs)
-        
-        if not all_docs:
-            log_message("INFO", "Aucun document disponible pour mise à jour")
-            return
-        
-        log_message("INFO", "Sélectionnez le document à mettre à jour :")
-        for i, doc in enumerate(sorted(all_docs)):
-            log_message("INFO", f"{i + 1}: {doc}")
 
-        try:
-            choice = int(input("> ")) - 1
-            if choice < 0 or choice >= len(all_docs):
-                log_message("ERROR", "Choix invalide")
-                return
-            doc_name = sorted(all_docs)[choice]
-            log_message("INFO", f"Entrez le nouveau contenu pour {doc_name}:")
-            new_content = input("> ").strip()
+@app.get("/generate_documents")
+def generate_documents(i :int):
+        load_dotenv()
+        key =  get_random_bytes(16)
+        print(f"KEY IN GENERATE DOC {key}")
+        #writeKey(key)
 
-            if client.update_document(doc_name, new_content):
-                log_message("INFO", "Document mis à jour avec succès")
-            else:
-                log_message("ERROR", "Échec de la mise à jour")
-                
-        except (ValueError, IndexError):
-            log_message("ERROR", "Choix invalide")
+        database  = Database()
+
+        database.deleteAllFiles()
+
+        # Création du client
+        client = Client()
+        # génération de fichiers aléatoires
+        docs  = FileGenerator.generate_random_file(PATHS["client"], num_files=i)
+
+         # Chiffrement des documents revoie les document chiffree
+        doc_encrypted , doc_encrypt_info = client.encrypt_folder(docs,key)
+        for doc in doc_encrypted:
+            database.addFile(doc)
+
+        #write_doc_encrypt_info(doc_encrypt_info)
+        # Création de l'index
+        index , doc_words_map = client.create_index(docs,key)
+    
+        #write_doc_words_map(doc_words_map)
+        write_env(key,doc_words_map,doc_encrypt_info)
+    
+        # chiffrement de l'index
+        encrypted_index =  client.encrypt_index(index,key)
+        database.addIndex(encrypted_index)
+
+
+
+       
+
+
+        # Création du serveur
+        server = Server(client)
+        yield
+
+        # Interface utilisateur
+        log_message("INFO", "Environnement Client/Serveur prêt !")
+        log_message("INFO", "Recherche dans index chiffré")
+        log_message("INFO", "Donnez le mot que vous cherchez ou quittez avec 'exit'")
+
 
 
 
 @app.post("/search")
 def handle_search(wordData: Word):
+        
         word = wordData.word
         result = {}
         client = Client()
         database = Database()
-
+        # pour charger le .env mis à jour.
+        load_dotenv(override=True)
         key =  base64.b64decode(os.getenv("KEY"))
+        print(f"KEY IN SEARCH {key}")
         doc_encrypt_info = ast.literal_eval(os.getenv("DOC_ENCRYPT_INFO"))
         doc_words_map = ast.literal_eval(os.getenv("DOC_WORDS_MAP"))
 
@@ -170,17 +180,45 @@ def handle_search(wordData: Word):
 
 
 def writeKey(key): 
-    with open(".env", "a") as f:
-        bese64Key = base64.b64encode(key).decode("utf-8")
-        f.write(f"KEY={bese64Key}\n")
+     if key is None:
+        log_message("La clé est numme")
+     else:
+        write_or_replace( "KEY", base64.b64encode(key).decode("utf-8"))
 
 def write_doc_encrypt_info(en):
-     with open(".env", "a") as f:
-        f.write(f"DOC_ENCRYPT_INFO={en}\n")
+      write_or_replace("DOC_ENCRYPT_INFO",en)
 
 def write_doc_words_map(en):
-     with open(".env", "a") as f:
-        f.write(f"DOC_WORDS_MAP={en}\n")
+     write_or_replace( "DOC_WORDS_MAP",en)
+            
+
+def write_env(key, doc_words_map ,doc_encrypt_info):
+      with open(".env", "w") as f:
+        encoded_key = base64.b64encode(key).decode("utf-8")
+
+        f.write(f"KEY={encoded_key}\n")
+        f.write(f"DOC_ENCRYPT_INFO={doc_encrypt_info}\n")
+        f.write(f"DOC_WORDS_MAP={doc_words_map}\n")
+
+def write_or_replace(variable,en):
+     exist = False
+     with open(".env", "r") as f:
+        lines = f.readlines()
+        for i, l in enumerate(lines):
+             if l.startswith(f"{variable}="):
+                  lines[i] =  f"{variable}={en}\n"
+                  exist = True
+     f.close()
+     if (exist):
+        with open(".env", "w") as f:
+            f.writelines(lines)
+        f.close()
+     if (not exist):
+        with open(".env", "a") as f:
+            f.write(f"{variable}={en}\n")                 
+
+
+
 
 if __name__ == "__main__":
     import uvicorn

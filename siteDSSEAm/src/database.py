@@ -11,7 +11,15 @@ class Database:
         self.index = self.db["index"]
 
 
-
+    def deleteAllFiles(self):
+        if "index" in  self.db.list_collection_names():
+             self.db["index"].drop()
+        if "documents" in  self.db.list_collection_names():
+                self.db["documents"].drop()
+        self.db =self.client["database"]
+        self.collec = self.db["documents"]
+        self.index = self.db["index"]
+                 
     def addFile(self,text):
         self.collec.insert_one(text)
 

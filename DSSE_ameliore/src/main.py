@@ -90,10 +90,10 @@ def handle_search_for_graph_dsse_ameliore(word,client,server):
         search_token = client.calculate_search_token(word)
         matches = server.search_word(search_token)
         if not matches:
-            #log_message("INFO", f"Mot non trouvé")
+            log_message("INFO", f"Mot non trouvé")
             return 0
         else:
-            #log_message("INFO", f"Mot trouvé dans {len(matches)} fichier(s)")
+            log_message("INFO", f"Mot trouvé dans {len(matches)} fichier(s)")
             temp_files = server.transfer_files_to_client(matches)
 
             # Déchiffrement et affichage des résultats

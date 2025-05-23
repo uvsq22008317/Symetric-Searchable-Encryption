@@ -5,7 +5,7 @@ import logging
 
 
 # Définition du niveau de logs via une variable d’environnement (par defaut INFO)
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO") # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO") # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITIisL
 
 # Configuration du logger
 logging.basicConfig(
@@ -40,12 +40,42 @@ FILENAMES_LIST = [
     "report", "resume", "notes", 
     "journal", "data", "backup"
     ]
-
+'''
 FRUITS_LIST = [
     "Banane", "Pomme", "Fraise", "Mangue", "Orange",
     "Raisin", "Pastèque", "Ananas", "Cerise", "Pêche",
     "Poire", "Framboise", "Melon", "Kiwi", "Grenade",
-    "Papaye", "Fruit du dragon", "Litchi", "Noix de coco", "Myrtille",
+    "Papaye", "Fruit_du_dragon", "Litchi", "Noix_de_coco", "Myrtille",
+    "Abricot", "Figue", "Kaki", "Goyave", "Citron",
+    "Avocat","Noisette","Noix","Olive","Prune",
+    "Mangouston","Cacao","Aubergine","Fève","Haricot",
+    "Cassis","Citron","Pamplemousse","Clémentine",
+    "Piment","Pois","Tomate","Bettrave","Brocoli"
+    "Carotte","Célerié","Chou","Chou-fleur","Epinard",
+    "Salade","Laitue","Mandarine","Poireau","Pomme-de-terre",
+    "Radis","Haricot-vert",Haricot-blanc"
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+    "Tomate","Comcombre",
+]
+'''
+FRUITS_LIST = [
+    "Banane", "Pomme", "Fraise", "Mangue", "Orange",
+    "Raisin", "Pastèque", "Ananas", "Cerise", "Pêche",
+    "Poire", "Framboise", "Melon", "Kiwi", "Grenade",
+    "Papaye", "Fruit_du_dragon", "Litchi", "Noix_de_coco", "Myrtille",
     "Abricot", "Figue", "Kaki", "Goyave", "Citron"
 ]
 

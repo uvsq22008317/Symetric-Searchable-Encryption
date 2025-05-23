@@ -43,7 +43,7 @@ FRUITS_LIST = [
     "Banane", "Pomme", "Fraise", "Mangue", "Orange",
     "Raisin", "Pastèque", "Ananas", "Cerise", "Pêche",
     "Poire", "Framboise", "Melon", "Kiwi", "Grenade",
-    "Papaye", "Fruit du dragon", "Litchi", "Noix de coco", "Myrtille",
+    "Papaye", "Fruit_du_dragon", "Litchi", "Noix_de_coco", "Myrtille",
     "Abricot", "Figue", "Kaki", "Goyave", "Citron"
 ]
 
