@@ -10,7 +10,10 @@
           </mat-progress-spinner>
           <p>Chargement en cours...</p>
       </div>
-      } 
+      } @else if (errorMessage) {
+      <div class="error-message">{{ errorMessage }}</div>
+      }
+  
     <mat-form-field appearance="outline">
       <mat-label>Sélectionnez un document</mat-label>
       <mat-select [(value)]="selectedDocument" (selectionChange)="loadDocumentContent()">
