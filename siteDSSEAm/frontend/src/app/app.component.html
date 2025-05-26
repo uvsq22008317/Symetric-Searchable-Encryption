@@ -1,11 +1,18 @@
 <main class="main">
   <h1>Symetric Searchable Encryption</h1>
- 
-  @if(!(auth.isAuthenticated$ | async)){
-    <h2>Bienvenue Veuillez vous connecter</h2>
-    <button mat-flat-button (click)="auth.loginWithRedirect()">Login</button>
-  } @else{
-    <button mat-flat-button (click)="logout()">Logout</button>
-  }
+
+    @if(!(auth.isAuthenticated$ | async)){
+      <div class="main2">
+      <h2 class="welcome-text">Bienvenue Veuillez vous connecter</h2>
+      <button mat-flat-button (click)="auth.loginWithRedirect()">Login</button>
+    </div>
+    } @else{
+      <button class="logout-button" mat-flat-button (click)="logout()">Logout</button>
+      <div class="search-button">
+        <button mat-flat-button routerLink="/search">Search</button>
+      </div>
+      
+    }
+
 </main>
-<router-outlet></router-outlet> 
+<router-outlet></router-outlet>

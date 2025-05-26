@@ -1,12 +1,13 @@
 import { Component, Inject, inject, NgModule } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 import {MatButtonModule} from '@angular/material/button';
 import { CommonModule, DOCUMENT } from '@angular/common';
 
-import { AuthService } from '@auth0/auth0-angular';
+
+import { AuthModule, AuthService } from '@auth0/auth0-angular';
 @Component({
   selector: 'app-root',
-  imports: [CommonModule,RouterOutlet,MatButtonModule],
+  imports: [CommonModule,RouterModule,RouterOutlet,MatButtonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
