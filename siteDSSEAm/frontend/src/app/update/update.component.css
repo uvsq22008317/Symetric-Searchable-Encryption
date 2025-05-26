@@ -1,0 +1,94 @@
+html, body {
+    overflow: hidden;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.update-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.update-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.mat-form-field {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+textarea.document-editor {
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+textarea.document-editor:focus {
+    border-color: #007BFF;
+    outline: none;
+}
+
+.update-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.update-actions .primary-btn {
+    min-width: 120px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.update-actions .primary-btn:hover {
+    background-color: #0056b3;
+}
+
+.update-actions .warn-btn {
+    min-width: 120px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.update-actions .warn-btn:hover {
+    background-color: #b02a37;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 15px;
+}
+
+.error-message {
+  color: #f44336;
+  padding: 15px;
+  text-align: center;
+  font-weight: 500;
+}
