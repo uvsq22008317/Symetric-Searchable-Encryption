@@ -385,7 +385,6 @@ class Client:
                 for word in self.formate_line(line):
                     new_words.add(word)
 
-            # Ancien contenu : traiter uniquement si fourni
             old_words = set()
             if old_content is not None:
                 for line in old_content.splitlines():
@@ -423,6 +422,25 @@ class Client:
                         index[l].append(filename)
 
                     self.doc_words_map[word].add(j)
+            
+            # Calcule des apparitions actuelles du fichier dans l'index
+            current_count = sum(1 for values in index.values() if filename in values)
+            
+            # on récupère le maximum des apparitions parmi tous les documents
+            all_documents = {doc for values in index.values() for doc in values}
+            max_count = max(
+                sum(1 for values in index.values() if doc in values)
+                for doc in all_documents
+            )
+            
+            # nb mots factices à ajouter pour égaliser les apparitions
+            additional_entries = max(0, max_count - current_count)
+            for i in range(additional_entries):
+                fake_text = f"FAKE_{filename}_{i}"
+                fake_index = self.prf(fake_text)
+                if fake_index not in index:
+                    index[fake_index] = []
+                index[fake_index].append(filename)
                     
             # Sauvegarder le nouvel index
             with open(index_path, 'w', encoding='utf-8') as f:
