@@ -19,15 +19,6 @@ utils : Contient les fichiers utilitaires
 services : Les actions des clients et du serveur
 - client.py / database.py : respectivement les actions de chacun 
 
-# Sources
-Logging : https://realpython.com/python-logging/
-Comment supprimer un dossier : [Shutil : https://stackoverflow.com/questions/303200/how-do-i-remove-delete-a-folder-that-is-not-empty](https://stackoverflow.com/questions/2656322/shutil-rmtree-fails-on-windows-with-access-is-denied)
-
-# Dépendance(s)
-```bash
-pip install pycryptodome
-```
-
 # Utilisation
 ```bash
 # Dans le dossier source  : Symetric-Searchable-Encryption 
@@ -37,5 +28,15 @@ python3 -m DSSE_ameliore.src.main
 python3 -m SSE.main 
 # Pour lancer le DSSE
 python3 -m DSSE.src.main
-python -m main.py
 ```
+
+
+# Sources
+Logging : https://realpython.com/python-logging/
+Comment supprimer un dossier : [Shutil : https://stackoverflow.com/questions/303200/how-do-i-remove-delete-a-folder-that-is-not-empty](https://stackoverflow.com/questions/2656322/shutil-rmtree-fails-on-windows-with-access-is-denied)
+
+# Dépendance(s)
+```bash
+pip install pycryptodome
+```
+
