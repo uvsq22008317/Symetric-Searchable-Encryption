@@ -224,13 +224,7 @@ class Client:
         # On chiffre uniquement les mots et pas les noms de fichiers déjà chiffrées
         encrypted_index = {}
         for word, enc_doc_list in new_index.items():
-            """ Pas utilisé ?
-            iv = get_random_bytes(16)
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            encrypted_word = cipher.encrypt(pad(word.encode("utf-8"), 16, "iso7816")).hex()
-            """
-            # C'est ici que tout se joue
-            token = hashlib.pbkdf2_hmac("sha512", word.encode('utf-8'), self.key,  600000).hex()
+            token = hashlib.sha512(word.encode('utf-8')).hexdigest()
             encrypted_index[token] = enc_doc_list
 
         # Sauvegarde de l'index chiffré
@@ -247,7 +241,7 @@ class Client:
     def calculate_search_token(self, word):
         # Calcule le token de recherche sans exposer la clé au serveur
         try:
-            return hashlib.pbkdf2_hmac("sha512", word.encode('utf-8'), self.key, 600000).hex()
+            return hashlib.sha512(word.encode("utf-8")).hexdigest()
         except Exception as e:
             log_message("ERROR", f"Erreur dans le calcul du token : {e}")
             return None
