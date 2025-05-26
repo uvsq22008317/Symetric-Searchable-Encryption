@@ -2,11 +2,13 @@
 
 # Structure
 
+```bash
 ├── DSSE
 ├── DSSE_ameliore
 ├── generationGraphes
 ├── siteDSSEAm
 └── SSE
+```
 
 Chaque dossier correspond à une implementation de SSE décrit dans le rapport ainsi que le code pour pouvoir faire les graphes donnés dans le rapport.
 
@@ -37,6 +39,8 @@ Comment supprimer un dossier : [Shutil : https://stackoverflow.com/questions/303
 
 # Dépendance(s)
 ```bash
+pip install pycryptodome
+#pour siteDSSEAm 
 pip install pycryptodome
 ```
 
