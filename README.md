@@ -1,5 +1,6 @@
 # SSE : Symetric Searchable Encryption
 
+code des différentes implémentation de notre projet TER SSE = Symetric Searchable Encryption.
 # Structure
 
 ```bash
