@@ -47,9 +47,8 @@ html,body{
 
 .main2 {
   display: flex;
-  flex-direction: column;    /* si tu veux empiler tes <h1>, <h2>, <button>, etc. en colonne */
-  justify-content: center;   /* centre verticalement */
-  align-items: center;  
+  flex-direction: column; 
+  justify-content: center;   
   padding-top: 100px;
 }
 
@@ -63,13 +62,20 @@ h1 {
   margin: 0.5rem 0 2rem;
 }
 
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
 
-.search-button {
+
+.search-button, .update-button {
   display: flex;
   justify-content: center;
   margin-bottom: 2rem;
   padding-top: 100px;
 }
+
 
 .logout-button {
   position: fixed;
