@@ -1,0 +1,39 @@
+<div class="update-container">
+    <h2>Mettre à jour un document</h2>
+  
+    @if (isLoading) {
+      <div class="loading-container">
+          <mat-progress-spinner 
+          mode="indeterminate" 
+          diameter="50"
+          strokeWidth="5">
+          </mat-progress-spinner>
+          <p>Chargement en cours...</p>
+      </div>
+      } @else if (errorMessage) {
+      <div class="error-message">{{ errorMessage }}</div>
+      }
+  
+    <mat-form-field appearance="outline">
+      <mat-label>Sélectionnez un document</mat-label>
+      <mat-select [(value)]="selectedDocument" (selectionChange)="loadDocumentContent()">
+        @for (doc of documents; track doc) {
+          <mat-option [value]="doc">{{ doc }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  
+    @if (selectedDocument) {
+      <textarea 
+        [(ngModel)]="documentContent" 
+        placeholder="Contenu du document" 
+        class="document-editor">
+      </textarea>
+    }
+  
+    <div class="update-actions">
+      <button class="primary-btn" (click)="updateDocument()">Mettre à jour</button>
+      <button class="warn-btn" routerLink="/">Annuler</button>
+    </div>
+  </div>
+  
