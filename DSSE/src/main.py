@@ -62,6 +62,7 @@ def main():
 
         elif word.lower() in ["add", "ajouter"]:
             handle_add_files(client)
+            server.reload_index()
             continue
 
         elif word.lower() in ["remove", "delete", "supprimer"]:
@@ -136,21 +137,21 @@ def handle_search(word, client, server):
         server.cleanup_temp_files(temp_files)
 
 def handle_add_files(client):
-    log_message("INFO", "Fichiers disponibles dans le backup:")
+    log_message("INFO", "Fichiers disponibles dans le client:")
     
-    backup_files = []
+    client_files = []
 
-    for element in os.listdir(PATHS["backup"]):
-        full_path = os.path.join(PATHS["backup"], element)
+    for element in os.listdir(PATHS["client"]):
+        full_path = os.path.join(PATHS["client"], element)
         
         if element.endswith(EXTENTIONS) and os.path.isfile(full_path):
-            backup_files.append(element)
+            client_files.append(element)
 
-    if not backup_files:
-        log_message("INFO", "Aucun fichier disponible dans le backup")
+    if not client_files:
+        log_message("INFO", "Aucun fichier disponible dans le client")
         return
     
-    for i, f in enumerate(backup_files, 1):
+    for i, f in enumerate(client_files, 1):
         log_message("INFO", f"{i}. {f}")
     
     log_message("INFO", "Entrez le numéro du fichier à ajouter:")
@@ -161,9 +162,9 @@ def handle_add_files(client):
             return
         try:
             idx = int(choice) - 1
-            if 0 <= idx < len(backup_files):
-                filename = backup_files[idx]
-                ok = client.add_file_from_backup(filename)
+            if 0 <= idx < len(client_files):
+                filename = client_files[idx]
+                ok = client.add_file(filename)
                 if ok:
                     log_message("INFO", "Ajout réussi!")
                 else:

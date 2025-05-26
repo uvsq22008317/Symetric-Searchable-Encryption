@@ -495,6 +495,92 @@ class Client:
         except Exception as e:
             log_message("ERROR", f"Erreur lors de l'ajout du fichier {filename}: {e}")
             return False
+        
+    def add_file(self, filename):
+        log_message("INFO", f"Ajout du fichier {filename} en cours...")
+        
+        file_path = os.path.join(self.client_path, filename)
+        backup_path = os.path.join(self.backup_path, filename)
+        
+        # Vérifications initiales
+        if not os.path.isfile(file_path):
+            log_message("ERROR", f"Le fichier {filename} n'existe pas dans le dossier client")
+            return False
+        
+        if not filename.endswith(EXTENTIONS):
+            log_message("ERROR", f"Le fichier {filename} n'a pas l'extension requise")
+            return False
+        
+        if filename in self.doc_name_map:
+            log_message("ERROR", f"Le fichier {filename} existe déjà dans la table de correspondance")
+            return False
+        
+        try:
+            # copie de sauvegarde
+            shutil.copy2(file_path, backup_path)
+            log_message("DEBUG", f"Copie de sauvegarde créée: {backup_path}")
+            
+            with open(file_path, "r", encoding="utf-8") as file:
+                plaintext = file.read().encode()
+            
+            # chiffrement contenu CTR
+            nonce = get_random_bytes(8)
+            ctr = Counter.new(64, prefix=nonce)
+            cipher_content = AES.new(self.key, AES.MODE_CTR, counter=ctr)
+            encrypted_content = cipher_content.encrypt(self.pad(plaintext))
+            
+            # Chiffrement nom CBC
+            iv = get_random_bytes(16)
+            cipher_name = AES.new(self.key, AES.MODE_CBC, iv=iv)
+            filename_clean = os.path.splitext(filename)[0].encode("utf-8")
+            encrypted_name = cipher_name.encrypt(self.pad(filename_clean))
+            
+            encrypted_filename = encrypted_name.hex() + ENCODED_EXTENTION
+            encrypted_path = os.path.join(self.server_path, encrypted_filename)
+            with open(encrypted_path, "wb") as f:
+                name_len = len(encrypted_name).to_bytes(4, byteorder="big")
+                f.write(nonce + iv + name_len + encrypted_name + encrypted_content)
+            self.doc_name_map[filename] = encrypted_filename
+            log_message("DEBUG", f"Fichier chiffré créé: {encrypted_filename}")
+            
+            index_path = os.path.join(self.client_path, "index.json")
+            if os.path.exists(index_path):
+                with open(index_path, "r", encoding="utf-8") as f:
+                    index = json.load(f)
+            else:
+                index = {}
+            
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            for word in self.formate_line(content):
+                if word not in index:
+                    index[word] = []
+                if filename not in index[word]: 
+                    index[word].append(filename)
+            
+            # Sauvegarde de l'index
+            with open(index_path, "w", encoding="utf-8") as f:
+                json.dump(index, f, indent=4, ensure_ascii=False)
+            
+            self.encrypt_index()
+            src = os.path.join(self.client_path, "encrypted_index.json")
+            dst = os.path.join(self.server_path, "encrypted_index.json")
+            shutil.move(src, dst)
+            
+            log_message("INFO", f"Fichier {filename} ajouté avec succès")
+            return True
+        
+        except Exception as e:
+            log_message("ERROR", f"Erreur lors de l'ajout du fichier {filename}: {e}")
+            # Nettoyage en cas d'erreur
+            if 'encrypted_path' in locals() and os.path.exists(encrypted_path):
+                os.remove(encrypted_path)
+            if 'backup_path' in locals() and os.path.exists(backup_path):
+                os.remove(backup_path)
+            if filename in self.doc_name_map:
+                del self.doc_name_map[filename]
+            return False
 
     def remove_document(self, filename):
         log_message("INFO", f"Suppression du document {filename} en cours...")
