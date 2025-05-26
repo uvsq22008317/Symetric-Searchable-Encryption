@@ -213,8 +213,10 @@ class Client:
         # On filtre les chaînes vides
         return [word for word in raw_words if word]
 
-    def prf(self,text,key):
-        return hmac.new(key, text.encode('utf-8'), digestmod=hashlib.sha256).hexdigest()
+    def prp(self,text,key):
+        cipher = AES.new(key, AES.MODE_ECB)
+        return cipher.encrypt(pad(text.encode('utf-8'), AES.block_size) ).hex()
+        #return hmac.new(key, text.encode('utf-8'), digestmod=hashlib.sha256).hexdigest()
     
     def padForIndex(self,t,taille):
         return t.zfill(taille)
@@ -230,7 +232,7 @@ class Client:
         for document in documents:
                         for word in self.format_line(document["text"]):
                             text = word + str(j)
-                            l = self.prf(text,key)
+                            l = self.prp(text,key)
                             mots_distincts.add(word)
                             if l not in index:
                                 index[l] = []
@@ -262,7 +264,7 @@ class Client:
             for document in documents:
                 for l in range (1,max-id_compteur[document["name"]]):
                     text =  "0"*x+self.padForIndex(str(i),y)+self.padForIndex(str(l),y)
-                    indice = self.prf(text,key)
+                    indice = self.prp(text,key)
                     #log_message("INFO",f"l'indice : {indice}")
                     if indice in index:
                         log_message("INFO",f"l'indice : {indice} existe deja")
@@ -275,7 +277,7 @@ class Client:
         list_doc_index = doc_words_map[word]
         for j in (list_doc_index):
             text = word + str(j)
-            l = self.prf(text,key)
+            l = self.prp(text,key)
             trapdoor.append(l)
         return trapdoor
 

@@ -254,8 +254,10 @@ class Client:
         # On filtre les chaînes vides
         return [word for word in raw_words if word]
 
-    def prf(self,text):
-        return hmac.new(self.key, text.encode('utf-8'), digestmod=hashlib.sha512).hexdigest()
+    def prp(self,text):
+        cipher = AES.new(self.key, AES.MODE_ECB)
+        return cipher.encrypt(pad(text.encode('utf-8'), AES.block_size) ).hex()
+        #return hmac.new(self.key, text.encode('utf-8'), digestmod=hashlib.sha512).hexdigest()
     
     def padForIndex(self,t,taille):
         return t.zfill(taille)
@@ -282,7 +284,7 @@ class Client:
                         for word in self.formate_line(line):
                             nbr_mots+=1
                             text = word + str(j)
-                            l = self.prf(text)
+                            l = self.prp(text)
                             mots_distincts.add(word)
                             if l not in index:
                                 index[l] = []
@@ -325,7 +327,7 @@ class Client:
                     #log_message("INFO",f"list resultat idcomteur[doc] : {id_compteur[document]}")
                     for l in range (1,max-id_compteur[document]):
                         text =  "0"*x+self.padForIndex(str(i),y)+self.padForIndex(str(l),y)
-                        indice = self.prf(text)
+                        indice = self.prp(text)
                         #log_message("INFO",f"l'indice : {indice}")
                         index[indice] = [document]
                     i+=1     
@@ -346,7 +348,7 @@ class Client:
         #log_message("INFO",f" list_doc_index : {list_doc_index} associé au mot {word}")
         for j in (list_doc_index):
             text = word + str(j)
-            l = self.prf(text)
+            l = self.prp(text)
             #log_message("INFO",f" l : {l} -> le j : {j}")
             trapdoor.append(l)
         return trapdoor
@@ -396,7 +398,7 @@ class Client:
             for word in words_to_remove:
                 for j in self.doc_words_map.get(word, set()):
                     text = word + str(j)
-                    l = self.prf(text)
+                    l = self.prp(text)
                     if l in index and filename in index[l]:
                         index[l].remove(filename)
                         if not index[l]:
@@ -415,7 +417,7 @@ class Client:
 
                 for j in range(len(self.doc_words_map[word]) + 1):
                     text = word + str(j)
-                    l = self.prf(text)
+                    l = self.prp(text)
                     if l not in index:
                         index[l] = []
                     if filename not in index[l]:
@@ -437,7 +439,7 @@ class Client:
             additional_entries = max(0, max_count - current_count)
             for i in range(additional_entries):
                 fake_text = f"FAKE_{filename}_{i}"
-                fake_index = self.prf(fake_text)
+                fake_index = self.prp(fake_text)
                 if fake_index not in index:
                     index[fake_index] = []
                 index[fake_index].append(filename)
@@ -722,7 +724,7 @@ class Client:
                 for word in self.formate_line(line):
                     words_in_file.add(word)
                     text = word + str(len(self.doc_words_map.get(word, [])))
-                    l = self.prf(text)
+                    l = self.prp(text)
                     
                     if l not in index:
                         index[l] = []
@@ -745,7 +747,7 @@ class Client:
             fake_entries_needed = max(0, max_entries - current_entries)
             for i in range(fake_entries_needed):
                 fake_text = f"FAKE_{filename}_{i}"
-                fake_index = self.prf(fake_text)
+                fake_index = self.prp(fake_text)
                 if fake_index not in index:
                     index[fake_index] = []
                 index[fake_index].append(filename)
