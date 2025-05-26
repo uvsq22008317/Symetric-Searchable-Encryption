@@ -1,5 +1,16 @@
+# SSE : Symetric Searchable Encryption
+
 # Structure
-| nonce (8) | iv (16) | name_len (4) | encrypted_name | encrypted_content |
+
+├── DSSE
+├── DSSE_ameliore
+├── generationGraphes
+├── siteDSSEAm
+└── SSE
+
+Chaque dossier correspond à une implementation de SSE décrit dans le rapport ainsi que le code pour pouvoir faire les graphes donnés dans le rapport.
+
+Pour chacun des dossiers on a les fichiers suivants : 
 
 utils : Contient les fichiers utilitaires
 - encryptor.py : Les fonctions de chiffrement/dechiffrement
@@ -19,6 +30,12 @@ pip install pycryptodome
 
 # Utilisation
 ```bash
-# Dans le dossier source faire
+# Dans le dossier source  : Symetric-Searchable-Encryption 
+# Pour lancer le DSSE_ameliore
+python3 -m DSSE_ameliore.src.main
+# Pour lancer le SSE
+python3 -m SSE.main 
+# Pour lancer le DSSE
+python3 -m DSSE.src.main
 python -m main.py
 ```
