@@ -10,16 +10,38 @@ from Crypto.Util import Counter
 from Crypto.Util.Padding import pad, unpad
 from DSSE.src.config import EXTENTIONS, PATHS, log_message, ENCODED_EXTENTION
 
+DOC_MAP_PATH    = os.path.join(PATHS["client"], "doc_name_map.json")
+DELETE_LIST_PATH = os.path.join(PATHS["client"], "delete_list.json")
+
 
 class Client:
+    def load_doc_map(self):
+        if os.path.isfile(DOC_MAP_PATH):
+            with open(DOC_MAP_PATH, "r", encoding="utf-8") as f:
+                self.doc_name_map = json.load(f)
+            log_message("DEBUG", f"doc_name_map.json chargé ({DOC_MAP_PATH})")
+        else:
+            self.doc_name_map = {}
+            log_message("DEBUG", "Aucun doc_name_map.json trouvé, initialisation vide")
+
+    def save_doc_map(self):
+        with open(DOC_MAP_PATH, "w", encoding="utf-8") as f:
+            json.dump(self.doc_name_map, f, indent=4, ensure_ascii=False)
+        log_message("DEBUG", f"doc_name_map.json sauvé ({DOC_MAP_PATH})")
+
+
+
     def __init__(self, key=None):
         self.key = key or get_random_bytes(16)
         self.client_path = PATHS["client"]
         self.server_path = PATHS["server"]
         self.backup_path = PATHS["backup"]
         self.ensure_directories()
+        self.ensure_directories()
+        self.load_doc_map()
         self.doc_name_map = {}
 
+    
     def ensure_directories(self):
         # Crée les répertoires nécessaires si ils existent pas
         for path in [self.client_path, self.server_path, self.backup_path]:
@@ -80,6 +102,7 @@ class Client:
                     continue
 
         log_message("DEBUG", f"Encryption du dossier {self.client_path} terminée")
+        self.save_doc_map()
         return self.doc_name_map
     
     def decrypt_file(self, encrypted_file_path):
@@ -144,11 +167,15 @@ class Client:
         return True
     
     def clean_client_folder(self):
-        # iniatialement dans le main aussi mais toujours pas secure
         log_message("INFO", "Nettoyage du dossier client en cours...")
         for file in os.listdir(self.client_path):
             full_path = os.path.join(self.client_path, file)
-            if os.path.isfile(full_path) and file not in ("index.json", "encrypted_index.json"):
+            if os.path.isfile(full_path) and file not in (
+                "index.json",
+                "encrypted_index.json",
+                "doc_name_map.json",
+                "delete_list.json",
+            ):
                 try:
                     os.remove(full_path)
                     log_message("DEBUG", f"Fichier supprimé : {file}")
@@ -229,6 +256,7 @@ class Client:
         
         # Maj de la table de correspondance
         self.doc_name_map[original_filename] = encrypted_filename
+        self.save_doc_map()
         log_message("DEBUG", f"Fichier chiffré et ajouté au serveur: {encrypted_filename}")
     
         # Maj l'index chiffré
@@ -479,7 +507,10 @@ class Client:
                 
                 # Maj de la table de correspondance
                 self.doc_name_map[filename] = encrypted_filename
+                self.save_doc_map()
+                log_message("DEBUG", f"doc_name_map mis à jour après add_file")
                 log_message("DEBUG", f"Fichier chiffré et ajouté au serveur: {encrypted_filename}")
+                return True
             
             # Maj l'index chiffré
             self.encrypt_index()
@@ -494,7 +525,7 @@ class Client:
             
         except Exception as e:
             log_message("ERROR", f"Erreur lors de l'ajout du fichier {filename}: {e}")
-            return False
+            return False    
         
     def add_file(self, filename):
         log_message("INFO", f"Ajout du fichier {filename} en cours...")
@@ -541,6 +572,7 @@ class Client:
                 name_len = len(encrypted_name).to_bytes(4, byteorder="big")
                 f.write(nonce + iv + name_len + encrypted_name + encrypted_content)
             self.doc_name_map[filename] = encrypted_filename
+            self.save_doc_map()
             log_message("DEBUG", f"Fichier chiffré créé: {encrypted_filename}")
             
             index_path = os.path.join(self.client_path, "index.json")
@@ -642,3 +674,52 @@ class Client:
         except Exception as e:
             log_message("ERROR", f"Erreur lors de la suppression du document {filename}: {e}")
             return False
+
+
+    def remove_document_vrai(self, filename):
+        log_message("INFO", f"Suppression du document {filename} en cours...")
+
+        delete_list_path = os.path.join(PATHS["client"], "delete_list.json")
+        if os.path.isfile(delete_list_path):
+            with open(delete_list_path, "r", encoding="utf-8") as f:
+                delete_list = json.load(f)
+        else:
+            delete_list = []
+            # On crée directement un fichier vide pour debug
+            with open(delete_list_path, "w", encoding="utf-8") as f:
+                json.dump(delete_list, f, indent=4, ensure_ascii=False)
+            log_message("DEBUG", f"Création de {delete_list_path} (vide)")
+
+        map_path = os.path.join(PATHS["client"], "doc_name_map.json")
+        if os.path.isfile(map_path):
+            with open(map_path, "r", encoding="utf-8") as f:
+                self.doc_name_map = json.load(f)
+        else:
+            log_message("ERROR", "Impossible de charger doc_name_map.json")
+            return False
+
+        if filename not in self.doc_name_map:
+            log_message("ERROR", f"Le fichier {filename} n'existe pas dans doc_name_map.json")
+            return False
+
+        encrypted_name = self.doc_name_map[filename]
+        encrypted_path = os.path.join(PATHS["server"], encrypted_name)
+        backup_path    = os.path.join(PATHS["backup"],   filename)
+
+        for path in (encrypted_path, backup_path):
+            if os.path.exists(path):
+                os.remove(path)
+                log_message("DEBUG", f"Supprimé : {path}")
+
+        del self.doc_name_map[filename]
+        self.save_doc_map()
+        log_message("DEBUG", f"doc_name_map.json mis à jour, entrée '{filename}' retirée")
+
+        if filename not in delete_list:
+            delete_list.append(filename)
+            with open(delete_list_path, "w", encoding="utf-8") as f:
+                json.dump(delete_list, f, indent=4, ensure_ascii=False)
+            log_message("INFO", f"'{filename}' ajouté à delete_list.json")
+
+        log_message("INFO", f"Document '{filename}' marqué comme supprimé.")
+        return True

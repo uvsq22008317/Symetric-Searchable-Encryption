@@ -66,7 +66,7 @@ def main():
             continue
 
         elif word.lower() in ["remove", "delete", "supprimer"]:
-            handle_remove_file(client)
+            handle_remove_file_2(client)
             continue
 
         if not word:
@@ -201,11 +201,48 @@ def handle_remove_file(client):
             idx = int(choice) - 1
             if 0 <= idx < len(client.doc_name_map):
                 filename = list(client.doc_name_map.keys())[idx]
-                client.remove_document(filename)
+                client.remove_document_vrai(filename)
             else:
                 log_message("WARNING", "Numéro invalide")
         except ValueError:
             log_message("WARNING", "Veuillez entrer un numéro valide")
+
+
+
+def handle_remove_file_2(client):
+    docs = list(client.doc_name_map.keys())
+    if not docs:
+        log_message("INFO", "Aucun document disponible pour suppression.")
+        return
+
+    for i, name in enumerate(docs, start=1):
+        log_message("INFO", f"{i}. {name}")
+
+    while True:
+        log_message("INFO", "Entrez le numéro du document à supprimer ou 'exit' pour annuler:")
+        choice = input("> ").strip()
+        if choice.lower() in ['exit', 'quit', 'q']:
+            log_message("INFO", "Suppression annulée.")
+            return
+
+        if not choice.isdigit():
+            log_message("WARNING", "Veuillez entrer un numéro valide.")
+            continue
+
+        idx = int(choice) - 1
+        if idx < 0 or idx >= len(docs):
+            log_message("WARNING", f"Numéro invalide (doit être entre 1 et {len(docs)}).")
+            continue
+
+        filename = docs[idx]
+        success = client.remove_document_vrai(filename) 
+        if success:
+            log_message("INFO", f"Document '{filename}' supprimé avec succès.")
+        else:
+            log_message("ERROR", f"Échec de la suppression de '{filename}'.")
+        return
+
+
 
 
 if __name__ == "__main__":
